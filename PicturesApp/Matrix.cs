@@ -1,4 +1,4 @@
-﻿namespace ImgTest
+﻿namespace PicturesApp
 {
 	public static class Matrix
 	{
