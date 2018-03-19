@@ -2,6 +2,13 @@
 {
 	public static class Matrix
 	{
+		public static readonly int[] ShiftUp = new int[]
+		{
+			0, 1, 0,
+			0, 0, 0,
+			0, 0, 0
+		};
+
 		public static readonly int[] GaussianBlur = new int[]
 		{
 			1, 2, 1,

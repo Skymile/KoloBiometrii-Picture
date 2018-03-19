@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using Windows = System.Windows;
+using System.Linq;
 
 namespace PicturesApp
 {
@@ -21,49 +22,50 @@ namespace PicturesApp
 		{
 			InitializeComponent();
 
-			this.bitmap = new Bitmap("lenna.png");
+			this.bitmap = new Bitmap("apple.png");
 
 			SetSource(this.bitmap);
 		}
 
-		/// <summary>
-		///		Przeksztalca podana bitmape
-		/// </summary>
-		/// <param name="bmp">
-		///		Bitmapa do odczytu pikseli
-		///		(zakladamy 3 wartosci RGB)
-		///	</param>
-		/// <param name="matrix">
-		///		Macierz konwolucji 
-		///		(zakladamy 3x3 jako 9 elementowa tablice)
-		/// </param>
-		private unsafe Bitmap ApplyEffect(Bitmap bmp, int[] matrix = null)
+		private int Sum(int[] array)
+		{
+			int sum = 0;
+			foreach (var n in array)
+				sum += n;
+			return sum;
+		}
+
+		private int MatrixSum(int[] array)
+		{
+			int sum = Sum(array);
+			return sum == 0 ? 1 : sum;
+		}
+
+		private BitmapData LockBits(Bitmap bitmap, ImageLockMode lockMode, PixelFormat pixelFormat) => 
+			bitmap.LockBits(new Rectangle(Point.Empty, bitmap.Size), lockMode, pixelFormat);
+
+		private byte ReturnNormal(int result) =>
+			result > 255 ? Byte.MaxValue :
+			result < 0 ? Byte.MinValue : (byte)result;
+		
+		private unsafe Bitmap ApplyEffect(
+			Bitmap bmp, 
+			Func<int, byte> output,
+			params (int[] matrix, Func<byte[], int[], int> func)[] effect)
 		{
 			const int bytesPerPixel = 3;
 
 			int width = bmp.Width;
 			int stride = bmp.Width * bytesPerPixel;
 
-			int sum = 0;
-			foreach (var n in matrix)
-				sum += n;
-
-			if (sum == 0)
-				sum = 1;
+			int[] sum = new int[effect.Length];
+			for (int i = 0; i < effect.Length; i++)
+				sum[i] = MatrixSum(effect[i].matrix);
 
 			Bitmap newBitmap = new Bitmap(width, bmp.Height);
 
-			BitmapData readData = bmp.LockBits(
-				new Rectangle(Point.Empty, bmp.Size),
-				ImageLockMode.ReadOnly,
-				PixelFormat.Format24bppRgb
-			);
-
-			BitmapData writeData = newBitmap.LockBits(
-				new Rectangle(Point.Empty, bmp.Size),
-				ImageLockMode.WriteOnly,
-				PixelFormat.Format24bppRgb
-			);
+			BitmapData readData = LockBits(bmp, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+			BitmapData writeData = LockBits(newBitmap, ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
 
 			byte* read = (byte*)readData.Scan0.ToPointer();
 			byte* write = (byte*)writeData.Scan0.ToPointer();
@@ -74,22 +76,13 @@ namespace PicturesApp
 				{
 					int offset = j * stride + i;
 
-					int result = (
-						matrix[4] * read[offset] +
-						matrix[5] * read[offset + bytesPerPixel] +
-						matrix[3] * read[offset - bytesPerPixel] +
+					byte[] array = Disperse(read, offset, bytesPerPixel, stride);
 
-						matrix[1] * read[offset + stride] +
-						matrix[2] * read[offset + stride + bytesPerPixel] +
-						matrix[0] * read[offset + stride - bytesPerPixel] +
+					int result = 0;
+					for (int k = 0; k < effect.Length; k++)
+						result += effect[k].func(array, effect[k].matrix) / sum[k];
 
-						matrix[7] * read[offset - stride] +
-						matrix[8] * read[offset - stride + bytesPerPixel] +
-						matrix[6] * read[offset - stride - bytesPerPixel]
-					) / sum;
-
-					write[offset] = result > 255 ? Byte.MaxValue :
-									result < 0 ? Byte.MinValue : (byte)result;
+					write[offset] = output(result);
 				}
 			});
 
@@ -99,12 +92,56 @@ namespace PicturesApp
 			return newBitmap;
 		}
 
+		private int ApplyConvolution(byte[] output, int[] matrix)
+		{
+			int result = 0;
+
+			for (int i = 0; i < output.Length; i++)
+				result += output[i] * matrix[i];
+
+			return result;
+		}
+
+		private int ApplyMedian(byte[] output, int[] matrix)
+		{
+			var res = output.ToList();
+
+			res.Sort();
+
+			return res[res.Count / 2];
+		}
+
+		private unsafe byte[] Disperse(byte* array, int offset, int x, int y) =>
+			new[]
+			{
+				array[offset + y - x], array[offset + y], array[offset + y + x],
+				array[offset - x]    , array[offset]    , array[offset + x],
+				array[offset - y - x], array[offset - y], array[offset - y + x],
+			};
+
+		private byte ReturnSobel(int result)
+		{
+			result = (result * result + result * result) / 256;
+			return ReturnNormal(result);
+		}
+
 		private void TestButton_Click(object sender, Windows.RoutedEventArgs e)
 		{
 			Stopwatch stopwatch = new Stopwatch();
 
 			stopwatch.Start();
-			this.bitmap = ApplyEffect(this.bitmap, Matrix.Emboss);
+			this.bitmap = ApplyEffect(
+				this.bitmap,
+				ReturnNormal,
+				(Matrix.ShiftUp, ApplyMedian)
+			);
+
+			//this.bitmap = ApplyEffect(
+			//	this.bitmap, 
+			//	ReturnSobel,
+			//	(Matrix.SobelHorizontal, ApplyConvolution),
+			//	(Matrix.SobelVertical, ApplyConvolution)
+			//);
 			stopwatch.Stop();
 
 			SetSource(this.bitmap);
