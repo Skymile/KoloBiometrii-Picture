@@ -1,7 +1,7 @@
-﻿<Application x:Class="PicturesApp.App"
+﻿<Application x:Class="Biometrics.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:PicturesApp"
+             xmlns:local="clr-namespace:Biometrics"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          
