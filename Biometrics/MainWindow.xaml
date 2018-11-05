@@ -12,6 +12,9 @@
             Content="Apply" 
             HorizontalAlignment="Left" Height="29" Margin="10,10,0,0" 
             VerticalAlignment="Top" Width="150" Click="BtnApply_Click"/>
+        <Image 
+            Name="Image"
+            HorizontalAlignment="Left" Height="399" Margin="165,10,0,0" VerticalAlignment="Top" Width="617"/>
 
     </Grid>
 </Window>

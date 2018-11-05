@@ -30,7 +30,7 @@ namespace Biometrics
         {
             var picture = new Picture("taj.png");
 
-            picture.Histogram().Save("hist.png");
+            Image.Source = picture.Histogram().BitmapSource();
         }
     }
 }

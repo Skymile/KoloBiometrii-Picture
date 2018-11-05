@@ -2,6 +2,12 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media.Imaging;
+
+using DrawPoint = System.Drawing.Point;
 
 namespace Models
 {
@@ -13,18 +19,37 @@ namespace Models
 
         public void Save(string filename) => this.bitmap.Save(filename);
 
-        public unsafe Picture Histogram()
+        public BitmapSource BitmapSource()
         {
+            IntPtr ptr = this.bitmap.GetHbitmap();
+
+            try
+            {
+                return Imaging.CreateBitmapSourceFromHBitmap(
+                    ptr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions()
+                );
+            }
+            finally
+            {
+                DeleteObject(ptr);
+            }
+        }
+
+        [DllImport("gdi32.dll")]
+        public static extern bool DeleteObject(IntPtr ptr);
+
+        public unsafe Picture Histogram()
+        { // Histogram dla czerwonego
             var histogram = new Bitmap(256, 256);
 
             BitmapData histData = histogram.LockBits(
-                new Rectangle(Point.Empty, histogram.Size),
+                new Rectangle(DrawPoint.Empty, histogram.Size),
                 ImageLockMode.WriteOnly,
                 PixelFormat.Format24bppRgb
             );
 
             BitmapData oldData = this.bitmap.LockBits(
-                new Rectangle(Point.Empty, this.bitmap.Size),
+                new Rectangle(DrawPoint.Empty, this.bitmap.Size),
                 ImageLockMode.ReadOnly,
                 PixelFormat.Format24bppRgb
             );
@@ -66,13 +91,13 @@ namespace Models
             var newBmp = new Bitmap(this.bitmap.Width, this.bitmap.Height);
 
             BitmapData newData = newBmp.LockBits(
-                new Rectangle(Point.Empty, newBmp.Size),
+                new Rectangle(DrawPoint.Empty, newBmp.Size),
                 ImageLockMode.WriteOnly,
                 PixelFormat.Format24bppRgb
             );
 
             BitmapData oldData = this.bitmap.LockBits(
-                new Rectangle(Point.Empty, this.bitmap.Size),
+                new Rectangle(DrawPoint.Empty, this.bitmap.Size),
                 ImageLockMode.ReadOnly,
                 PixelFormat.Format24bppRgb
             );
