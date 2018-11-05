@@ -30,16 +30,7 @@ namespace Biometrics
         {
             var picture = new Picture("taj.png");
 
-            picture.Apply(
-            
-                new int[] 
-                {
-                    -1, 0, 0,
-                    0, 1,  0,
-                    0, 0,  0
-                }
-
-            ).Save("taj2.png");
+            picture.Histogram().Save("hist.png");
         }
     }
 }

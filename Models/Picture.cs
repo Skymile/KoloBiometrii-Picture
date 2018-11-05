@@ -38,8 +38,23 @@ namespace Models
             for (int i = 0; i < len; i += 3)
                 ++pixels[read[i]];
 
+            int max = pixels.Max();
 
+            double ratio = histogram.Height / (double)max;
 
+            for (int i = 0; i < pixels.Length; i++)
+                pixels[i] = (int)(pixels[i] * ratio);
+
+            for (int i = 0; i < histData.Width; ++i)
+                for (int j = 0; j < histData.Height; j++)
+                {
+                    int o = i * 3 + j * histData.Stride;
+
+                    int range = 255 - pixels[i];
+
+                    write[o] = write[o + 1] = write[o + 2] =
+                        range > j ? Byte.MaxValue : Byte.MinValue;
+                }
 
             histogram.UnlockBits(histData);
             this.bitmap.UnlockBits(oldData);
