@@ -13,6 +13,39 @@ namespace Models
 
         public void Save(string filename) => this.bitmap.Save(filename);
 
+        public unsafe Picture Histogram()
+        {
+            var histogram = new Bitmap(256, 256);
+
+            BitmapData histData = histogram.LockBits(
+                new Rectangle(Point.Empty, histogram.Size),
+                ImageLockMode.WriteOnly,
+                PixelFormat.Format24bppRgb
+            );
+
+            BitmapData oldData = this.bitmap.LockBits(
+                new Rectangle(Point.Empty, this.bitmap.Size),
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format24bppRgb
+            );
+
+            byte* read = (byte*)oldData.Scan0.ToPointer();
+            byte* write = (byte*)histData.Scan0.ToPointer();
+
+            int len = oldData.Stride * oldData.Height;
+
+            int[] pixels = new int[256];
+            for (int i = 0; i < len; i += 3)
+                ++pixels[read[i]];
+
+
+
+
+            histogram.UnlockBits(histData);
+            this.bitmap.UnlockBits(oldData);
+            return new Picture(histogram);
+        }
+
         public unsafe Picture Apply(int[] matrix)
         {
             var newBmp = new Bitmap(this.bitmap.Width, this.bitmap.Height);
