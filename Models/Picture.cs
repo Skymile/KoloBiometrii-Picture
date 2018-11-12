@@ -2,12 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-
-using DrawPoint = System.Drawing.Point;
 
 namespace Models
 {
@@ -19,37 +14,25 @@ namespace Models
 
         public void Save(string filename) => this.bitmap.Save(filename);
 
-        public BitmapSource BitmapSource()
+        public BitmapSource Source => NativeMethods.GetBitmapSource(this.bitmap);
+
+        public unsafe Picture Histogram(Size? size = null)
         {
-            IntPtr ptr = this.bitmap.GetHbitmap();
+            if (this.bitmap is null)
+                throw new NullReferenceException($"{nameof(this.bitmap)} was null");
 
-            try
-            {
-                return Imaging.CreateBitmapSourceFromHBitmap(
-                    ptr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions()
-                );
-            }
-            finally
-            {
-                DeleteObject(ptr);
-            }
-        }
-
-        [DllImport("gdi32.dll")]
-        public static extern bool DeleteObject(IntPtr ptr);
-
-        public unsafe Picture Histogram()
-        { // Histogram dla czerwonego
-            var histogram = new Bitmap(256, 256);
+            Bitmap histogram = size is null
+                ? new Bitmap(this.bitmap.Width, this.bitmap.Height)
+                : new Bitmap(size.Value.Width, size.Value.Height);
 
             BitmapData histData = histogram.LockBits(
-                new Rectangle(DrawPoint.Empty, histogram.Size),
+                new Rectangle(Point.Empty, histogram.Size),
                 ImageLockMode.WriteOnly,
                 PixelFormat.Format24bppRgb
             );
 
             BitmapData oldData = this.bitmap.LockBits(
-                new Rectangle(DrawPoint.Empty, this.bitmap.Size),
+                new Rectangle(Point.Empty, this.bitmap.Size),
                 ImageLockMode.ReadOnly,
                 PixelFormat.Format24bppRgb
             );
@@ -65,20 +48,26 @@ namespace Models
 
             int max = pixels.Max();
 
-            double ratio = histogram.Height / (double)max;
+            double ratio = histData.Height / (double)max;
 
-            for (int i = 0; i < pixels.Length; i++)
+            for (int i = 0; i < pixels.Length; ++i)
                 pixels[i] = (int)(pixels[i] * ratio);
 
+            double widthRatio  = 256.0 / histData.Width;
+            double heightRatio = 256.0 / histData.Height;
+
             for (int i = 0; i < histData.Width; ++i)
-                for (int j = 0; j < histData.Height; j++)
+                for (int j = 0; j < histData.Height; ++j)
                 {
+                    int x = (int)(i * widthRatio);
+                    int y = (int)(j * heightRatio);
+
                     int o = i * 3 + j * histData.Stride;
 
-                    int range = 255 - pixels[i];
+                    int range = 255 - pixels[x];
 
                     write[o] = write[o + 1] = write[o + 2] =
-                        range > j ? Byte.MaxValue : Byte.MinValue;
+                        range > y ? Byte.MaxValue : Byte.MinValue;
                 }
 
             histogram.UnlockBits(histData);
@@ -91,13 +80,13 @@ namespace Models
             var newBmp = new Bitmap(this.bitmap.Width, this.bitmap.Height);
 
             BitmapData newData = newBmp.LockBits(
-                new Rectangle(DrawPoint.Empty, newBmp.Size),
+                new Rectangle(Point.Empty, newBmp.Size),
                 ImageLockMode.WriteOnly,
                 PixelFormat.Format24bppRgb
             );
 
             BitmapData oldData = this.bitmap.LockBits(
-                new Rectangle(DrawPoint.Empty, this.bitmap.Size),
+                new Rectangle(Point.Empty, this.bitmap.Size),
                 ImageLockMode.ReadOnly,
                 PixelFormat.Format24bppRgb
             );
@@ -117,7 +106,7 @@ namespace Models
 
                     for (int i = 0; i < 3; i++)
                         for (int j = 0; j < 3; j++)
-                            offsets[i + j * 3] = 
+                            offsets[i + j * 3] =
                                 offset + i * 3 + j * oldData.Stride;
 
                     int sum = 0;
@@ -125,8 +114,8 @@ namespace Models
                         sum += read[offsets[i]] * matrix[i];
                     sum /= matrixSum;
 
-                    write[offsets[4]] = 
-                        sum < 0   ? Byte.MinValue : 
+                    write[offsets[4]] =
+                        sum < 0 ? Byte.MinValue :
                         sum > 255 ? Byte.MaxValue : (byte)sum;
                 }
 
@@ -136,6 +125,6 @@ namespace Models
             return new Picture(newBmp);
         }
 
-        private Bitmap bitmap;
+        private readonly Bitmap bitmap;
     }
 }

@@ -28,9 +28,9 @@ namespace Biometrics
 
         private void BtnApply_Click(object sender, RoutedEventArgs e)
         {
-            var picture = new Picture("taj.png");
+            var picture = new Picture("lena.bmp");
 
-            Image.Source = picture.Histogram().BitmapSource();
+            Image.Source = picture.Histogram().Source;
         }
     }
 }
