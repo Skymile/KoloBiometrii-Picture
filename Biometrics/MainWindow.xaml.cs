@@ -14,6 +14,9 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Models;
 
+// tinyurl.com/knbiometrii
+// https://github.com/Skymile/KoloBiometrii-Picture
+
 namespace Biometrics
 {
     /// <summary>

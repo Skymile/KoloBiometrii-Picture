@@ -17,6 +17,59 @@ namespace Models
 
         public BitmapSource Source => NativeMethods.GetBitmapSource(this.bitmap);
 
+        public unsafe Picture ApplySobel(params int[][] sobels)
+        {
+            Bitmap readBmp = this.bitmap;
+            var writeBmp = new Bitmap(readBmp.Width, readBmp.Height);
+
+            var rect = new Rectangle(Point.Empty, readBmp.Size);
+
+            BitmapData readData  = readBmp .LockBits(rect, ImageLockMode.ReadOnly , readBmp .PixelFormat);
+            BitmapData writeData = writeBmp.LockBits(rect, ImageLockMode.WriteOnly, writeBmp.PixelFormat);
+
+            byte* r = (byte*)readData .Scan0.ToPointer();
+            byte* w = (byte*)writeData.Scan0.ToPointer();
+
+            int[] vertical =
+            {
+                1, 0, -1,
+                2, 0, -2,
+                1, 0, -1
+            };
+
+            int[] horizontal =
+            {
+                 1,  2,  1,
+                 0,  0,  0,
+                -1, -2, -1
+            };
+
+            for (int i = 1; i < readData.Height - 1; i++)
+                for (int j = 3; j < readData.Stride - 3; j++)
+                {
+                    int offset = i * readData.Stride + j;
+
+                    int sumVertical = 0, sumHorizontal = 0;
+                    for (int x = -1; x < 2; x++)
+                        for (int y = -1; y < 2; y++)
+                        {
+                            int value = r[offset + x * 3 + y * readData.Stride];
+
+                            int internalOffset = (y + 1) * 3 + x + 1;
+
+                            sumVertical += value * vertical[internalOffset];
+                            sumHorizontal += value * horizontal[internalOffset];
+                        }
+
+
+                }
+
+            readBmp.UnlockBits(readData);
+            writeBmp.UnlockBits(writeData);
+
+            return new Picture(writeBmp);
+        }
+
         public unsafe Picture Histogram(Size? size = null)
         {
             if (this.bitmap is null)
@@ -120,8 +173,8 @@ namespace Models
                             int o = i * stride;
 
                             write[o + 0] = read[o + 0];
-                            write[o + 2] = read[o + 1];
-                            write[o + 1] = read[o + 2];
+                            write[o + 1] = read[o + 1];
+                            write[o + 2] = read[o + 2];
 
                             write[o + stride - 1] = read[o + stride - 1];
                             write[o + stride - 2] = read[o + stride - 2];
@@ -158,8 +211,8 @@ namespace Models
                     int o = i * stride;
 
                     write[o + 0] = read[o + 0];
-                    write[o + 2] = read[o + 1];
-                    write[o + 1] = read[o + 2];
+                    write[o + 1] = read[o + 1];
+                    write[o + 2] = read[o + 2];
 
                     write[o + stride - 1] = read[o + stride - 1];
                     write[o + stride - 2] = read[o + stride - 2];
