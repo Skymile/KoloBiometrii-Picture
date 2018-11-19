@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
@@ -17,15 +18,27 @@ namespace Models
 
         public BitmapSource Source => NativeMethods.GetBitmapSource(this.bitmap);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BitmapData LockBits(ImageLockMode mode) =>
+            this.bitmap.LockBits(
+                new Rectangle(Point.Empty, this.bitmap.Size), 
+                mode, 
+                this.bitmap.PixelFormat
+            );
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UnlockBits(BitmapData data) =>
+            this.bitmap.UnlockBits(data);
+
         public unsafe Picture ApplySobel()
         {
             Bitmap readBmp = this.bitmap;
-            var writeBmp = new Bitmap(readBmp.Width, readBmp.Height, PixelFormat.Format24bppRgb);
+            var writePicture = new Picture(
+                new Bitmap(readBmp.Width, readBmp.Height, PixelFormat.Format24bppRgb)
+            );
 
-            var rect = new Rectangle(Point.Empty, readBmp.Size);
-
-            BitmapData readData  = readBmp .LockBits(rect, ImageLockMode.ReadOnly , readBmp .PixelFormat);
-            BitmapData writeData = writeBmp.LockBits(rect, ImageLockMode.WriteOnly, writeBmp.PixelFormat);
+            BitmapData readData  = LockBits(ImageLockMode.ReadOnly);
+            BitmapData writeData = writePicture.LockBits(ImageLockMode.WriteOnly);
 
             byte* r = (byte*)readData .Scan0.ToPointer();
             byte* w = (byte*)writeData.Scan0.ToPointer();
@@ -66,10 +79,10 @@ namespace Models
                     w[offset] = (byte)sum;
                 }
 
-            readBmp.UnlockBits(readData);
-            writeBmp.UnlockBits(writeData);
+            UnlockBits(readData);
+            writePicture.UnlockBits(writeData);
 
-            return new Picture(writeBmp);
+            return writePicture;
         }
 
         public unsafe Picture Histogram(Size? size = null)
