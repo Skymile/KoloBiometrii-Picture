@@ -29,15 +29,22 @@ namespace Biometrics
             InitializeComponent();
         }
 
+        private Picture picture = new Picture("apple.png");
+
         private void BtnApply_Click(object sender, RoutedEventArgs e)
         {
-            var picture = new Picture("lenna.png");
-
-            var applied = picture.ApplySobel();
-
-            applied.Save("lena2.png");
+            var applied = picture.Apply(
+                new[] {
+                    1, 1, 1,
+                    1, 1, 1,
+                    1, 1, 1
+                }, 3);
 
             Image.Source = applied.Source;
+
+            picture = applied;
+
+            picture.Save("apple2.png");
         }
     }
 }

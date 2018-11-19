@@ -8,29 +8,18 @@ using System.Windows.Media.Imaging;
 
 namespace Models
 {
-    public class Picture
+    public unsafe class Picture
     {
         public Picture(string filename) : this(new Bitmap(filename)) { }
+
+        public Picture(Picture picture, PixelFormat format) : 
+            this(new Bitmap(picture.bitmap.Width, picture.bitmap.Height, format)) { }
 
         internal Picture(Bitmap bitmap) => this.bitmap = bitmap;
 
         public void Save(string filename) => this.bitmap.Save(filename);
 
-        public BitmapSource Source => NativeMethods.GetBitmapSource(this.bitmap);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BitmapData LockBits(ImageLockMode mode) =>
-            this.bitmap.LockBits(
-                new Rectangle(Point.Empty, this.bitmap.Size), 
-                mode, 
-                this.bitmap.PixelFormat
-            );
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UnlockBits(BitmapData data) =>
-            this.bitmap.UnlockBits(data);
-
-        public unsafe Picture ApplySobel()
+        public Picture ApplySobel()
         {
             Bitmap readBmp = this.bitmap;
             var writePicture = new Picture(
@@ -85,7 +74,7 @@ namespace Models
             return writePicture;
         }
 
-        public unsafe Picture Histogram(Size? size = null)
+        public Picture Histogram(Size? size = null)
         {
             if (this.bitmap is null)
                 throw new NullReferenceException($"{nameof(this.bitmap)} was null");
@@ -146,69 +135,43 @@ namespace Models
             return new Picture(histogram);
         }
 
-        public static unsafe Picture Apply(Picture readPicture, int[] matrix, int maskWidth)
+        public Picture Apply(int[] matrix, int maskWidth)
         {
-            var readBmp = readPicture.bitmap;
-            var writeBmp = new Bitmap(readBmp.Width, readBmp.Height);
-            var rect = new Rectangle(Point.Empty, writeBmp.Size);
+            var writePicture = new Picture(this, PixelFormat.Format24bppRgb);
 
-            BitmapData writeData = writeBmp.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
-            BitmapData readData = readBmp.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            BitmapData writeData = writePicture.LockBits(ImageLockMode.WriteOnly);
+            BitmapData readData  = LockBits(ImageLockMode.ReadOnly);
 
-            int matrixSum = matrix[0];
-            for (int i = 1; i < matrix.Length; i++)
-                matrixSum += matrix[i];
+            int matrixSum = GetMatrixSum(matrix);
 
-            if (matrixSum == 0)
-                matrixSum = 1;
+            int stride = this.Width * 3;
 
-            int threshold = 0xFF * 0xFF;
-
-            int stride = readBmp.Width * 3;
             int halfMaskHeight = matrix.Length / maskWidth >> 1;
-            int height = readBmp.Height;
+            int height = this.Height;
 
+            int threshold = Byte.MaxValue * matrixSum;
             int strideTrimmed = stride - 3;
-
             int heightOffset = height - halfMaskHeight;
 
-            byte* read = (byte*)readData.Scan0.ToPointer();
-            byte* write = (byte*)writeData.Scan0.ToPointer();
+            IntPtr readHandle = readData.Scan0;
+            IntPtr writeHandle = writeData.Scan0;
 
-            if (height > 1000 && stride > 3000)
+            byte* read  = (byte*)readHandle.ToPointer();
+            byte* write = (byte*)writeHandle.ToPointer();
+
+            if (height + stride > 400)
             {
-                int chunk = heightOffset / 12;
+                int parallelCount = Environment.ProcessorCount;
 
                 Task[] borders = new[]
                 {
-                    Task.Run(() =>
-                    {
-                        for (int i = 0; i < height; i++)
-                        {
-                            int o = i * stride;
-
-                            write[o + 0] = read[o + 0];
-                            write[o + 1] = read[o + 1];
-                            write[o + 2] = read[o + 2];
-
-                            write[o + stride - 1] = read[o + stride - 1];
-                            write[o + stride - 2] = read[o + stride - 2];
-                            write[o + stride - 3] = read[o + stride - 3];
-                        }
-                    }),
-
-                    Task.Run(() =>
-                    {
-                        for (int i = 0; i < stride; i++)
-                        {
-                            write[i] = read[i];
-                            int o = (height - 1) * stride + i;
-                            write[o] = read[o];
-                        }
-                    })
+                    Task.Run(() => CopyHorizontalBorder(readHandle, writeHandle, height, stride)),
+                    Task.Run(() => CopyVerticalBorder(readHandle, writeHandle, height, stride))
                 };
 
-                var tasks = new Task[12];
+                int chunk = heightOffset / parallelCount;
+                var tasks = new Task[parallelCount];
+
                 for (int t = 0; t < tasks.Length; t++)
                 {
                     int ch = t * chunk;
@@ -216,38 +179,21 @@ namespace Models
                 }
 
                 InternalLoop(tasks.Length * chunk, heightOffset);
+
                 Task.WaitAll(tasks);
                 Task.WaitAll(borders);
             }
             else
             {
-                for (int i = 0; i < height; i++)
-                {
-                    int o = i * stride;
-
-                    write[o + 0] = read[o + 0];
-                    write[o + 1] = read[o + 1];
-                    write[o + 2] = read[o + 2];
-
-                    write[o + stride - 1] = read[o + stride - 1];
-                    write[o + stride - 2] = read[o + stride - 2];
-                    write[o + stride - 3] = read[o + stride - 3];
-                }
-
-                for (int i = 0; i < stride; i++)
-                {
-                    write[i] = read[i];
-                    int o = (height - 1) * stride + i;
-                    write[o] = read[o];
-                }
-
-                InternalLoop(0, height - halfMaskHeight);
+                CopyHorizontalBorder(readHandle, writeHandle, height, stride);
+                CopyVerticalBorder(readHandle, writeHandle, height, stride);
+                InternalLoop(0, heightOffset);
             }
 
-            readBmp.UnlockBits(readData);
-            writeBmp.UnlockBits(writeData);
+            UnlockBits(readData);
+            writePicture.UnlockBits(writeData);
 
-            return new Picture(writeBmp);
+            return writePicture;
 
             void InternalLoop(int offsetLeft, int offsetRight)
             {
@@ -264,7 +210,7 @@ namespace Models
                         for (int k = 0; k < matrix.Length; k++)
                         {
                             current = matrix[k];
-                            offset = (k % maskWidth) * 3 + (k / maskWidth) * stride;
+                            offset = k % maskWidth * 3 + k / maskWidth * stride;
 
                             sumR += r[offset + 0] * current;
                             sumG += r[offset + 1] * current;
@@ -273,15 +219,76 @@ namespace Models
 
                         byte* p = write + center;
 
-                        p[1] = (byte)(sumR > 0 ? sumR > threshold ? Byte.MaxValue : (byte)(sumR / matrixSum) : Byte.MinValue);
-                        p[0] = (byte)(sumR > 0 ? sumG > threshold ? Byte.MaxValue : (byte)(sumG / matrixSum) : Byte.MinValue);
-                        p[2] = (byte)(sumR > 0 ? sumB > threshold ? Byte.MaxValue : (byte)(sumB / matrixSum) : Byte.MinValue);
+                        p[0] = sumR > 0 ? sumR > threshold ? Byte.MaxValue : (byte)(sumR / matrixSum) : Byte.MinValue;
+                        p[1] = sumG > 0 ? sumG > threshold ? Byte.MaxValue : (byte)(sumG / matrixSum) : Byte.MinValue;
+                        p[2] = sumB > 0 ? sumB > threshold ? Byte.MaxValue : (byte)(sumB / matrixSum) : Byte.MinValue;
 
                         center += 3;
                         first += 3;
                     }
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BitmapData LockBits(ImageLockMode mode) =>
+            this.bitmap.LockBits(
+                new Rectangle(Point.Empty, this.bitmap.Size),
+                mode,
+                this.bitmap.PixelFormat
+            );
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UnlockBits(BitmapData data) =>
+            this.bitmap.UnlockBits(data);
+
+        public BitmapSource Source => NativeMethods.GetBitmapSource(this.bitmap);
+
+        public int Width => bitmap.Width;
+
+        public int Height => bitmap.Height;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetMatrixSum(in int[] matrix)
+        {
+            int sum = matrix[0];
+            for (int i = 1; i < matrix.Length; i++)
+                sum += matrix[i];
+            return sum == 0 ? 1 : sum;
+        }
+
+        private void CopyVerticalBorder(IntPtr read, IntPtr write, int height, int stride)
+        {
+            byte* r = (byte*)read.ToPointer();
+            byte* w = (byte*)write.ToPointer();
+
+            int o = (height - 1) * stride;
+            for (int i = 0; i < stride; ++i)
+            {
+                w[i] = r[i];
+                w[i + o] = r[i + o];
+            }
+        }
+
+        private void CopyHorizontalBorder(IntPtr read, IntPtr write, int height, int stride)
+        {
+            byte* r = (byte*)read.ToPointer();
+            byte* w = (byte*)write.ToPointer();
+
+            int o = 0;
+            for (int i = 0; i < height; ++i)
+            {
+                w[o + 0] = r[o + 0];
+                w[o + 1] = r[o + 1];
+                w[o + 2] = r[o + 2];
+
+                w[o + stride - 1] = r[o + stride - 1];
+                w[o + stride - 2] = r[o + stride - 2];
+                w[o + stride - 3] = r[o + stride - 3];
+
+                o += stride;
+            }
+        }
+
 
         private readonly Bitmap bitmap;
     }
