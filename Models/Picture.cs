@@ -28,13 +28,13 @@ namespace Models
             BitmapData histData = histogram.LockBits(
                 new Rectangle(Point.Empty, histogram.Size),
                 ImageLockMode.WriteOnly,
-                PixelFormat.Format24bppRgb
+                bitmap.PixelFormat
             );
 
             BitmapData oldData = this.bitmap.LockBits(
                 new Rectangle(Point.Empty, this.bitmap.Size),
                 ImageLockMode.ReadOnly,
-                PixelFormat.Format24bppRgb
+                bitmap.PixelFormat
             );
 
             byte* read = (byte*)oldData.Scan0.ToPointer();
@@ -56,18 +56,20 @@ namespace Models
             double widthRatio  = 256.0 / histData.Width;
             double heightRatio = 256.0 / histData.Height;
 
+            int bpp = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+
             for (int i = 0; i < histData.Width; ++i)
                 for (int j = 0; j < histData.Height; ++j)
                 {
                     int x = (int)(i * widthRatio);
                     int y = (int)(j * heightRatio);
 
-                    int o = i * 3 + j * histData.Stride;
+                    int o = i * bpp + j * histData.Stride;
 
-                    int range = 255 - pixels[x];
+                    byte value = 255 - pixels[x] > y ? Byte.MaxValue : Byte.MinValue;
 
-                    write[o] = write[o + 1] = write[o + 2] =
-                        range > y ? Byte.MaxValue : Byte.MinValue;
+                    for (int b = 0; b < bpp; b++)
+                        write[o + b] = value;
                 }
 
             histogram.UnlockBits(histData);
