@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -10,21 +11,29 @@ namespace Models
 {
     public unsafe class Picture
     {
-        public Picture(string filename) : this(new Bitmap(filename)) { }
+        public Picture(string filename) : this(
+            new Bitmap(filename), 
+            GetImageFormat(Path.GetExtension(filename))
+        )
+        { }
 
-        public Picture(Picture picture, PixelFormat format) : 
-            this(new Bitmap(picture.bitmap.Width, picture.bitmap.Height, format)) { }
+        public Picture(string filename, ImageFormat format) : this(new Bitmap(filename), format) { }
 
-        internal Picture(Bitmap bitmap) => this.bitmap = bitmap;
+        public Picture(Picture picture, PixelFormat pixFormat) : 
+            this(new Bitmap(picture.bitmap.Width, picture.bitmap.Height, pixFormat), picture.format) { }
 
-        public void Save(string filename) => this.bitmap.Save(filename);
+        internal Picture(Bitmap bitmap, ImageFormat format)
+        {
+            this.bitmap = bitmap;
+            this.format = format;
+        }
+
+        public void Save(string filename) => this.bitmap.Save(filename, this.format);
 
         public Picture ApplySobel()
         {
             Bitmap readBmp = this.bitmap;
-            var writePicture = new Picture(
-                new Bitmap(readBmp.Width, readBmp.Height, PixelFormat.Format24bppRgb)
-            );
+            var writePicture = new Picture(this, PixelFormat.Format24bppRgb);
 
             BitmapData readData  = LockBits(ImageLockMode.ReadOnly);
             BitmapData writeData = writePicture.LockBits(ImageLockMode.WriteOnly);
@@ -132,7 +141,7 @@ namespace Models
 
             histogram.UnlockBits(histData);
             this.bitmap.UnlockBits(oldData);
-            return new Picture(histogram);
+            return new Picture(histogram, ImageFormat.Png);
         }
 
         public Picture Apply(int[] matrix, int maskWidth)
@@ -289,7 +298,20 @@ namespace Models
             }
         }
 
+        private static ImageFormat GetImageFormat(string ext)
+        {
+            switch (ext.ToUpper())
+            {
+                case ".PNG": return ImageFormat.Png;
+                case ".BMP": return ImageFormat.Bmp;
+                case ".JPEG":
+                case ".JPG": return ImageFormat.Jpeg;
+                default:
+                    throw new NotImplementedException($"Unrecognized {nameof(ext)} {ext} file format.");
+            }
+        }
 
+        private readonly ImageFormat format;
         private readonly Bitmap bitmap;
     }
 }

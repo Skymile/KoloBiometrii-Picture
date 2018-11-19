@@ -1,21 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Models;
+
+using System.Drawing.Imaging;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Models;
-
-// tinyurl.com/knbiometrii
-// https://github.com/Skymile/KoloBiometrii-Picture
 
 namespace Biometrics
 {
@@ -29,7 +16,7 @@ namespace Biometrics
             InitializeComponent();
         }
 
-        private Picture picture = new Picture("apple.png");
+        private Picture picture = new Picture("apple.png", ImageFormat.MemoryBmp);
 
         private void BtnApply_Click(object sender, RoutedEventArgs e)
         {
