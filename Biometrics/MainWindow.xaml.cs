@@ -30,11 +30,16 @@ namespace Biometrics
         {
             var picture = new Picture("lena.bmp");
 
-            var histogram = picture.Histogram();
+            var applied = Picture.Apply(picture,
+                new[] {
+                1, 1, 1,
+                1, 1, 1,
+                1, 1, 1
+            }, 3);
 
-            Image.Source = histogram.Source;
+            Image.Source = applied.Source;
 
-            histogram.Save("lena2.png");
+            applied.Save("lena2.png");
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
 namespace Models
@@ -77,54 +78,141 @@ namespace Models
             return new Picture(histogram);
         }
 
-        public unsafe Picture Apply(int[] matrix)
+        public static unsafe Picture Apply(Picture readPicture, int[] matrix, int maskWidth)
         {
-            var newBmp = new Bitmap(this.bitmap.Width, this.bitmap.Height);
+            var readBmp = readPicture.bitmap;
+            var writeBmp = new Bitmap(readBmp.Width, readBmp.Height);
+            var rect = new Rectangle(Point.Empty, writeBmp.Size);
 
-            BitmapData newData = newBmp.LockBits(
-                new Rectangle(Point.Empty, newBmp.Size),
-                ImageLockMode.WriteOnly,
-                PixelFormat.Format24bppRgb
-            );
+            BitmapData writeData = writeBmp.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+            BitmapData readData = readBmp.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
 
-            BitmapData oldData = this.bitmap.LockBits(
-                new Rectangle(Point.Empty, this.bitmap.Size),
-                ImageLockMode.ReadOnly,
-                PixelFormat.Format24bppRgb
-            );
+            int matrixSum = matrix[0];
+            for (int i = 1; i < matrix.Length; i++)
+                matrixSum += matrix[i];
 
-            byte* read = (byte*)oldData.Scan0.ToPointer();
-            byte* write = (byte*)newData.Scan0.ToPointer();
-
-            int matrixSum = matrix.Sum();
             if (matrixSum == 0)
                 matrixSum = 1;
 
-            int[] offsets = new int[9];
-            for (int x = 3; x < oldData.Stride - 3; x++)
-                for (int y = 1; y < this.bitmap.Height - 1; y++)
+            int threshold = 0xFF * 0xFF;
+
+            int stride = readBmp.Width * 3;
+            int halfMaskHeight = matrix.Length / maskWidth >> 1;
+            int height = readBmp.Height;
+
+            int strideTrimmed = stride - 3;
+
+            int heightOffset = height - halfMaskHeight;
+
+            byte* read = (byte*)readData.Scan0.ToPointer();
+            byte* write = (byte*)writeData.Scan0.ToPointer();
+
+            if (height > 1000 && stride > 3000)
+            {
+                int chunk = heightOffset / 12;
+
+                Task[] borders = new[]
                 {
-                    int offset = x - 1 + (y - 1) * oldData.Stride;
+                    Task.Run(() =>
+                    {
+                        for (int i = 0; i < height; i++)
+                        {
+                            int o = i * stride;
 
-                    for (int i = 0; i < 3; i++)
-                        for (int j = 0; j < 3; j++)
-                            offsets[i + j * 3] =
-                                offset + i * 3 + j * oldData.Stride;
+                            write[o + 0] = read[o + 0];
+                            write[o + 2] = read[o + 1];
+                            write[o + 1] = read[o + 2];
 
-                    int sum = 0;
-                    for (int i = 0; i < 9; i++)
-                        sum += read[offsets[i]] * matrix[i];
-                    sum /= matrixSum;
+                            write[o + stride - 1] = read[o + stride - 1];
+                            write[o + stride - 2] = read[o + stride - 2];
+                            write[o + stride - 3] = read[o + stride - 3];
+                        }
+                    }),
 
-                    write[offsets[4]] =
-                        sum < 0 ? Byte.MinValue :
-                        sum > 255 ? Byte.MaxValue : (byte)sum;
+                    Task.Run(() =>
+                    {
+                        for (int i = 0; i < stride; i++)
+                        {
+                            write[i] = read[i];
+                            int o = (height - 1) * stride + i;
+                            write[o] = read[o];
+                        }
+                    })
+                };
+
+                var tasks = new Task[12];
+                for (int t = 0; t < tasks.Length; t++)
+                {
+                    int ch = t * chunk;
+                    tasks[t] = Task.Run(() => InternalLoop(ch, ch + chunk + 3));
                 }
 
-            this.bitmap.UnlockBits(oldData);
-            newBmp.UnlockBits(newData);
+                InternalLoop(tasks.Length * chunk, heightOffset);
+                Task.WaitAll(tasks);
+                Task.WaitAll(borders);
+            }
+            else
+            {
+                for (int i = 0; i < height; i++)
+                {
+                    int o = i * stride;
 
-            return new Picture(newBmp);
+                    write[o + 0] = read[o + 0];
+                    write[o + 2] = read[o + 1];
+                    write[o + 1] = read[o + 2];
+
+                    write[o + stride - 1] = read[o + stride - 1];
+                    write[o + stride - 2] = read[o + stride - 2];
+                    write[o + stride - 3] = read[o + stride - 3];
+                }
+
+                for (int i = 0; i < stride; i++)
+                {
+                    write[i] = read[i];
+                    int o = (height - 1) * stride + i;
+                    write[o] = read[o];
+                }
+
+                InternalLoop(0, height - halfMaskHeight);
+            }
+
+            readBmp.UnlockBits(readData);
+            writeBmp.UnlockBits(writeData);
+
+            return new Picture(writeBmp);
+
+            void InternalLoop(int offsetLeft, int offsetRight)
+            {
+                int center = (halfMaskHeight + offsetLeft) * stride + 6;
+                int first = center - stride - 3;
+                int sumR, sumG, sumB, offset, current;
+
+                for (int i = halfMaskHeight + offsetLeft; i < offsetRight; ++i)
+                    for (int j = 3; j < strideTrimmed; j += 3)
+                    {
+                        byte* r = read + first;
+
+                        sumR = sumG = sumB = 0;
+                        for (int k = 0; k < matrix.Length; k++)
+                        {
+                            current = matrix[k];
+                            offset = (k % maskWidth) * 3 + (k / maskWidth) * stride;
+
+                            sumR += r[offset + 0] * current;
+                            sumG += r[offset + 1] * current;
+                            sumB += r[offset + 2] * current;
+                        }
+
+                        byte* p = write + center;
+
+                        p[1] = (byte)(sumR > 0 ? sumR > threshold ? Byte.MaxValue : (byte)(sumR / matrixSum) : Byte.MinValue);
+                        p[0] = (byte)(sumR > 0 ? sumG > threshold ? Byte.MaxValue : (byte)(sumG / matrixSum) : Byte.MinValue);
+                        p[2] = (byte)(sumR > 0 ? sumB > threshold ? Byte.MaxValue : (byte)(sumB / matrixSum) : Byte.MinValue);
+
+                        center += 3;
+                        first += 3;
+                    }
+            }
         }
 
         private readonly Bitmap bitmap;
