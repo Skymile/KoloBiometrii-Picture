@@ -31,18 +31,13 @@ namespace Biometrics
 
         private void BtnApply_Click(object sender, RoutedEventArgs e)
         {
-            var picture = new Picture("lena.bmp");
+            var picture = new Picture("lenna.png");
 
-            var applied = Picture.Apply(picture,
-                new[] {
-                1, 1, 1,
-                1, 1, 1,
-                1, 1, 1
-            }, 3);
-
-            Image.Source = applied.Source;
+            var applied = picture.ApplySobel();
 
             applied.Save("lena2.png");
+
+            Image.Source = applied.Source;
         }
     }
 }

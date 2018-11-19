@@ -17,10 +17,10 @@ namespace Models
 
         public BitmapSource Source => NativeMethods.GetBitmapSource(this.bitmap);
 
-        public unsafe Picture ApplySobel(params int[][] sobels)
+        public unsafe Picture ApplySobel()
         {
             Bitmap readBmp = this.bitmap;
-            var writeBmp = new Bitmap(readBmp.Width, readBmp.Height);
+            var writeBmp = new Bitmap(readBmp.Width, readBmp.Height, PixelFormat.Format24bppRgb);
 
             var rect = new Rectangle(Point.Empty, readBmp.Size);
 
@@ -61,7 +61,9 @@ namespace Models
                             sumHorizontal += value * horizontal[internalOffset];
                         }
 
+                    int sum = (sumVertical * sumVertical + sumHorizontal * sumHorizontal) / 24;
 
+                    w[offset] = (byte)sum;
                 }
 
             readBmp.UnlockBits(readData);
