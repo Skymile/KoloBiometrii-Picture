@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -18,6 +19,61 @@ namespace Models
         internal Picture(Bitmap bitmap) => this.bitmap = bitmap;
 
         public void Save(string filename) => this.bitmap.Save(filename);
+
+        public Picture KMM()
+        {
+            int width  = this.bitmap.Width;
+            int height = this.bitmap.Height;
+            int stride = width * 3;
+
+            BitmapData data = LockBits(ImageLockMode.ReadWrite);
+            byte* ptr = (byte*)data.Scan0.ToPointer();
+
+            var tmpOnes = new List<int>();
+            for (int i = stride + 3; i < stride * height - stride - 3; i += 3)
+                if (ptr[i] == One)
+                    tmpOnes.Add(i);
+            int[] ones = tmpOnes.ToArray();
+
+            bool hasDeleted = true;
+            while (hasDeleted)
+            {
+                hasDeleted = false;
+
+                foreach (int i in ones)
+                    if (ptr[i + 3] == Zero || ptr[i + stride] == Zero ||
+                        ptr[i - 3] == Zero || ptr[i - stride] == Zero)
+                    {
+                        ptr[i] = ptr[i + 1] = ptr[i + 2] = Two;
+                    }
+                    else if (ptr[i + stride + 3] == Zero || ptr[i + stride - 3] == Zero ||
+                             ptr[i - stride + 3] == Zero || ptr[i - stride - 3] == Zero)
+                    {
+                        ptr[i] = ptr[i + 1] = ptr[i + 2] = Three;
+                    }
+
+
+
+
+            }
+
+            return this;
+        }
+
+        private const byte Zero  = 255;
+        private const byte One   = 0;
+        private const byte Two   = 2;
+        private const byte Three = 3;
+
+        private static HashSet<int> ComputeFours()
+        {
+            var set = new HashSet<int>(new int[] { 3, 6, 12, 24, 48, 96, 192, 129, 7, 14, 28, 56, 112, 224, 193, 131, 15, 30, 60, 120, 240, 225, 195, 135 });
+            set.IntersectWith(Deletion);
+            return set;
+        }
+
+        private static readonly HashSet<int> Deletion = new HashSet<int>(new int[] { 3, 5, 7, 12, 13, 14, 15, 20, 21, 22, 23, 28, 29, 30, 31, 48, 52, 53, 54, 55, 56, 60, 61, 62, 63, 65, 67, 69, 71, 77, 79, 80, 81, 83, 84, 85, 86, 87, 88, 89, 91, 92, 93, 94, 95, 97, 99, 101, 103, 109, 111, 112, 113, 115, 116, 117, 118, 119, 120, 121, 123, 124, 125, 126, 127, 131, 133, 135, 141, 143, 149, 151, 157, 159, 181, 183, 189, 191, 192, 193, 195, 197, 199, 205, 207, 208, 209, 211, 212, 213, 214, 215, 216, 217, 219, 220, 221, 222, 223, 224, 225, 227, 229, 231, 237, 239, 240, 241, 243, 244, 245, 246, 247, 248, 249, 251, 252, 253, 254, 255 });
+        private static readonly HashSet<int> Fours = ComputeFours();
 
         public Picture ApplySobel()
         {

@@ -17,5 +17,7 @@
             <Image Name="Image" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
         </Viewbox>
 
+        <Label Name="Status" Content="Time" HorizontalAlignment="Left" Margin="10,50,0,0" VerticalAlignment="Top" Height="30" Width="150"/>
+
     </Grid>
 </Window>
