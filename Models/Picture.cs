@@ -58,7 +58,44 @@ namespace Models
             }
 
             return this;
+
+            int ComputeSum(int sumOffset)
+            {
+                int sum = 0;
+
+                if (ptr[sumOffset + 3] != Zero)
+                    sum += Matrix[5];
+                if (ptr[sumOffset - 3] != Zero)
+                    sum += Matrix[3];
+
+                sumOffset += stride;
+
+                if (ptr[sumOffset + 3] != Zero)
+                    sum += Matrix[2];
+                if (ptr[sumOffset] != Zero)
+                    sum += Matrix[1];
+                if (ptr[sumOffset - 3] != Zero)
+                    sum += Matrix[0];
+
+                sumOffset -= stride + stride;
+
+                if (ptr[sumOffset + 3] != Zero)
+                    sum += Matrix[8];
+                if (ptr[sumOffset] != Zero)
+                    sum += Matrix[7];
+                if (ptr[sumOffset - 3] != Zero)
+                    sum += Matrix[6];
+
+                return sum;
+            }
         }
+
+        private static readonly int[] Matrix =
+        {
+            128,  1, 2,
+             64,  0, 4,
+             32, 16, 8
+        };
 
         private const byte Zero  = 255;
         private const byte One   = 0;
