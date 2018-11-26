@@ -40,9 +40,7 @@ namespace Biometrics
 
             Image.Source = applied.Source;
 
-            picture = applied;
-
-            picture.Save("fingerprint2.png");
+            //picture.Save("fingerprint2.png");
         }
     }
 }

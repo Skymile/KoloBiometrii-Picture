@@ -26,7 +26,9 @@ namespace Models
             int height = this.bitmap.Height;
             int stride = width * 3;
 
-            BitmapData data = LockBits(ImageLockMode.ReadWrite);
+            var rect = new Rectangle(Point.Empty, bitmap.Size);
+
+            BitmapData data = bitmap.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
             byte* ptr = (byte*)data.Scan0.ToPointer();
 
             var tmpOnes = new List<int>();
@@ -52,11 +54,31 @@ namespace Models
                         ptr[i] = ptr[i + 1] = ptr[i + 2] = Three;
                     }
 
+                foreach (int i in ones)
+                    if (Fours.Contains(ComputeSum(i)))
+                        ptr[i] = ptr[i + 1] = ptr[i + 2] = Zero;
 
+                foreach (int i in ones)
+                    if (ptr[i] == Two && Deletion.Contains(ComputeSum(i)))
+                    {
+                        ptr[i] = ptr[i + 1] = ptr[i + 2] = Zero;
+                        hasDeleted = true;
+                    }
 
+                foreach (int i in ones)
+                    if (ptr[i] == Three && Deletion.Contains(ComputeSum(i)))
+                    {
+                        ptr[i] = ptr[i + 1] = ptr[i + 2] = Zero;
+                        hasDeleted = true;
+                    }
 
+                var tmp = new List<int>(ones.Length >> 1);
+                foreach (var i in ones)
+                    if (ptr[i] != Zero)
+                        tmp.Add(i);
+                ones = tmp.ToArray();
             }
-
+            bitmap.UnlockBits(data);
             return this;
 
             int ComputeSum(int sumOffset)
