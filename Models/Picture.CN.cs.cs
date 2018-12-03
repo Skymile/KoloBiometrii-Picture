@@ -9,13 +9,6 @@ namespace Models
 {
     using Minutiaes = Dictionary<MinutiaeType, List<(int X, int Y)>>;
 
-    public enum MinutiaeType
-    {
-        Bifurcation,
-        Crossing,
-        Ending
-    }
-
     public unsafe partial class Picture
     {
         public Minutiaes CrossingNumber()
@@ -57,21 +50,15 @@ namespace Models
                     switch (sum)
                     {
                         case 1:
-                            MinutiaeType type = MinutiaeType.Ending;
-
-                            ptr[offset + 0] = 250;
-                            ptr[offset + 1] = 120;
-                            ptr[offset + 2] = 0;
-
-                            if (minutiaes.ContainsKey(type))
-                                minutiaes[type].Add((j / 3, i));
-                            else
-                                minutiaes[type] = new List<(int X, int Y)>() { (j / 3, i) };
-
+                            Extract(minutiaes, ptr, i, j, offset, MinutiaeType.Ending);
                             break;
+
                         case 3:
+                            Extract(minutiaes, ptr, i, j, offset, MinutiaeType.Bifurcation);
                             break;
+
                         case 4:
+                            Extract(minutiaes, ptr, i, j, offset, MinutiaeType.Crossing);
                             break;
                     }
                 }
@@ -80,6 +67,38 @@ namespace Models
             return minutiaes;
         }
 
+        private static void Extract(
+            Minutiaes minutiaes, 
+            byte* ptr, 
+            int i, 
+            int j, 
+            int offset, 
+            MinutiaeType type
+        )
+        {
+            ptr[offset + 0] = 250;
+            ptr[offset + 1] = 120;
+            ptr[offset + 2] = 0;
+
+            if (minutiaes.ContainsKey(type))
+                minutiaes[type].Add((j / 3, i));
+            else
+                minutiaes[type] = new List<(int X, int Y)>() { (j / 3, i) };
+        }
+
         public bool IsValid(byte b) => b != Zero;
+
+        private int GetDifferences(Minutiaes first, Minutiaes second)
+        {
+            int[] count = new int[Enum.GetNames(typeof(MinutiaeType)).Length];
+            for (int i = 0; i < first.Count; i++)
+                count[i] = first[(MinutiaeType)i].Count;
+            for (int i = 0; i < second.Count; i++)
+                count[i] -= second[(MinutiaeType)i].Count;
+            int sum = 0;
+            foreach (int s in count)
+                sum += s > 0 ? s : -s;
+            return sum;
+        }
     }
 }

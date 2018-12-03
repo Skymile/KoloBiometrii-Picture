@@ -1,4 +1,5 @@
 ﻿using Models;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,11 +9,14 @@ using System.Windows.Controls;
 
 namespace Biometrics
 {
+    using Minutiaes = Dictionary<MinutiaeType, List<(int X, int Y)>>;
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+
         public MainWindow()
         {
             InitializeComponent();
@@ -42,6 +46,7 @@ namespace Biometrics
             this.Status.Content = $"ms: {sw.ElapsedMilliseconds} ticks: {sw.ElapsedTicks}";
             for (int i = 1; i < kmm.Length; i++)
                 kmm[i] = this.pictures[i].KMM();
+            
 
             RefreshImages(kmm);
 
