@@ -20,29 +20,30 @@ namespace Biometrics
             this.images = new Image[] {
                 this.Image1, this.Image2, this.Image3, this.Image4
             };
+
+            RefreshImages(this.pictures);
         }
 
         private Image[] images;
 
         private Picture[] pictures = new Picture[]
         {
-            new Picture("fingerprint1"),
-            new Picture("fingerprint2"),
-            new Picture("fingerprint3"),
-            new Picture("fingerprint4"),
+            new Picture("fingerprint1.png"),
+            new Picture("fingerprint2.png"),
+            new Picture("fingerprint3.png"),
+            new Picture("fingerprint4.png"),
         };
 
         private void BtnApply_Click(object sender, RoutedEventArgs e)
         {
-            var kmm = new Picture[pictures.Length];
+            var kmm = new Picture[this.pictures.Length];
             var sw = Stopwatch.StartNew();
-            kmm[0] = pictures[0].KMM();
+            kmm[0] = this.pictures[0].KMM();
             this.Status.Content = $"ms: {sw.ElapsedMilliseconds} ticks: {sw.ElapsedTicks}";
             for (int i = 1; i < kmm.Length; i++)
-                kmm[i] = pictures[i].KMM();
+                kmm[i] = this.pictures[i].KMM();
 
-            Picture[] pics = new Picture[4];
-            RefreshImages(pics);
+            RefreshImages(kmm);
 
             //picture.Save("fingerprint2.png");
         }
@@ -50,7 +51,7 @@ namespace Biometrics
         private void RefreshImages(Picture[] pics)
         {
             for (int i = 0; i < pics.Length; ++i)
-                images[i].Source = pics[i].Source;
+                this.images[i].Source = pics[i].Source;
         }
     }
 }
