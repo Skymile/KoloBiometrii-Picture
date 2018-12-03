@@ -88,7 +88,7 @@ namespace Models
 
         public bool IsValid(byte b) => b != Zero;
 
-        private int GetDifferences(Minutiaes first, Minutiaes second)
+        public static int GetDifferences(Minutiaes first, Minutiaes second)
         {
             int[] count = new int[Enum.GetNames(typeof(MinutiaeType)).Length];
             for (int i = 0; i < first.Count; i++)

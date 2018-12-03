@@ -4,8 +4,8 @@ namespace Models
 {
     public enum MinutiaeType
     {
-        Bifurcation,
-        Crossing,
-        Ending
+        Ending      = 0,
+        Bifurcation = 1,
+        Crossing    = 2,
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Models;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -46,7 +47,19 @@ namespace Biometrics
             this.Status.Content = $"ms: {sw.ElapsedMilliseconds} ticks: {sw.ElapsedTicks}";
             for (int i = 1; i < kmm.Length; i++)
                 kmm[i] = this.pictures[i].KMM();
-            
+
+            var cn = new Minutiaes[kmm.Length];
+            for (int i = 0; i < kmm.Length; i++)
+                cn[i] = kmm[i].CrossingNumber();
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < cn.Length; i++)
+            {
+                for (int j = 0; j < cn.Length; j++)
+                    sb.AppendLine($"{i + 1}/{j + 1}: {Picture.GetDifferences(cn[i], cn[j])}");
+                sb.AppendLine();
+            }
+            this.Accuracy.Content = sb.ToString();
 
             RefreshImages(kmm);
 
