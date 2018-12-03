@@ -1,22 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Models;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Models;
 
-// tinyurl.com/knbiometrii
-// https://github.com/Skymile/KoloBiometrii-Picture
+/// tinyurl.com/knbiometrii
+/// https://github.com/Skymile/KoloBiometrii-Picture
 
 namespace Biometrics
 {
@@ -28,19 +16,41 @@ namespace Biometrics
         public MainWindow()
         {
             InitializeComponent();
+
+            this.images = new Image[] {
+                this.Image1, this.Image2, this.Image3, this.Image4
+            };
         }
 
-        private Picture picture = new Picture("fingerprint.png");
+        private Image[] images;
+
+        private Picture[] pictures = new Picture[]
+        {
+            new Picture("fingerprint1"),
+            new Picture("fingerprint2"),
+            new Picture("fingerprint3"),
+            new Picture("fingerprint4"),
+        };
 
         private void BtnApply_Click(object sender, RoutedEventArgs e)
         {
+            var kmm = new Picture[pictures.Length];
             var sw = Stopwatch.StartNew();
-            var applied = picture.KMM();
+            kmm[0] = pictures[0].KMM();
             this.Status.Content = $"ms: {sw.ElapsedMilliseconds} ticks: {sw.ElapsedTicks}";
+            for (int i = 1; i < kmm.Length; i++)
+                kmm[i] = pictures[i].KMM();
 
-            Image.Source = applied.Source;
+            Picture[] pics = new Picture[4];
+            RefreshImages(pics);
 
             //picture.Save("fingerprint2.png");
+        }
+
+        private void RefreshImages(Picture[] pics)
+        {
+            for (int i = 0; i < pics.Length; ++i)
+                images[i].Source = pics[i].Source;
         }
     }
 }

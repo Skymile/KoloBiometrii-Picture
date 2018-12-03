@@ -7,17 +7,35 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="180"></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+        </Grid.RowDefinitions>
+
         <Button 
             Name="BtnApply"
             Content="Apply" 
             HorizontalAlignment="Left" Height="29" Margin="10,10,0,0" 
             VerticalAlignment="Top" Width="150" Click="BtnApply_Click"/>
 
-        <Viewbox HorizontalAlignment="Left" Height="419" Margin="165,0,0,0" VerticalAlignment="Top" Width="627">
-            <Image Name="Image" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-        </Viewbox>
+        <Image Name="Image1" Grid.Row="0" Grid.Column="1"/>
+        <Image Name="Image2" Grid.Row="0" Grid.Column="2"/>
+        <Image Name="Image3" Grid.Row="1" Grid.Column="1"/>
+        <Image Name="Image4" Grid.Row="1" Grid.Column="2"/>
 
         <Label Name="Status" Content="Time" HorizontalAlignment="Left" Margin="10,50,0,0" VerticalAlignment="Top" Height="30" Width="150"/>
+        <Label Name="Accuracy" 
+               Content="Accuracy" 
+               HorizontalAlignment="Left" 
+               VerticalAlignment="Top" 
+               Height="330"
+               Width="180" Margin="0,90,0,0" Grid.RowSpan="2"
+               />
 
     </Grid>
 </Window>
