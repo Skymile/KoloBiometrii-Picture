@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Models
 {
@@ -76,9 +73,9 @@ namespace Models
             MinutiaeType type
         )
         {
-            ptr[offset + 0] = 250;
-            ptr[offset + 1] = 120;
-            ptr[offset + 2] = 0;
+            //ptr[offset + 0] = 250;
+            //ptr[offset + 1] = 120;
+            //ptr[offset + 2] = 0;
 
             if (minutiaes.ContainsKey(type))
                 minutiaes[type].Add((j / 3, i));
@@ -90,11 +87,16 @@ namespace Models
 
         public static int GetDifferences(Minutiaes first, Minutiaes second)
         {
-            int[] count = new int[Enum.GetNames(typeof(MinutiaeType)).Length];
+            var values = (MinutiaeType[])Enum.GetValues(typeof(MinutiaeType));
+            var count = new int[values.Length];
+
             for (int i = 0; i < first.Count; i++)
-                count[i] = first[(MinutiaeType)i].Count;
-            for (int i = 0; i < second.Count; i++)
-                count[i] -= second[(MinutiaeType)i].Count;
+                if (first.TryGetValue(values[i], out var list))
+                    count[i] = list.Count;
+            for (int i = 0; i < first.Count; i++)
+                if (second.TryGetValue(values[i], out var list))
+                    count[i] -= list.Count;
+
             int sum = 0;
             foreach (int s in count)
                 sum += s > 0 ? s : -s;

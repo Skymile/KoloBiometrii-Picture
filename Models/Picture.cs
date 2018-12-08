@@ -12,8 +12,9 @@ namespace Models
     {
         public Picture(string filename) : this(new Bitmap(filename)) { }
 
-        public Picture(Picture picture, PixelFormat format) : 
-            this(new Bitmap(picture.bitmap.Width, picture.bitmap.Height, format)) { }
+        public Picture(Picture picture, PixelFormat format) :
+            this(new Bitmap(picture.bitmap.Width, picture.bitmap.Height, format))
+        { }
 
         internal Picture(Bitmap bitmap) => this.bitmap = bitmap;
 
@@ -59,7 +60,7 @@ namespace Models
 
                             int internalOffset = (y + 1) * 3 + x + 1;
 
-                            sumVertical += value * vertical[internalOffset];
+                            sumVertical   += value * vertical  [internalOffset];
                             sumHorizontal += value * horizontal[internalOffset];
                         }
 
@@ -86,13 +87,13 @@ namespace Models
             BitmapData histData = histogram.LockBits(
                 new Rectangle(Point.Empty, histogram.Size),
                 ImageLockMode.WriteOnly,
-                bitmap.PixelFormat
+                this.bitmap.PixelFormat
             );
 
             BitmapData oldData = this.bitmap.LockBits(
                 new Rectangle(Point.Empty, this.bitmap.Size),
                 ImageLockMode.ReadOnly,
-                bitmap.PixelFormat
+                this.bitmap.PixelFormat
             );
 
             byte* read = (byte*)oldData.Scan0.ToPointer();
@@ -114,7 +115,7 @@ namespace Models
             double widthRatio  = 256.0 / histData.Width;
             double heightRatio = 256.0 / histData.Height;
 
-            int bpp = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+            int bpp = Image.GetPixelFormatSize(this.bitmap.PixelFormat) / 8;
 
             for (int i = 0; i < histData.Width; ++i)
                 for (int j = 0; j < histData.Height; ++j)
@@ -149,9 +150,9 @@ namespace Models
             int halfMaskHeight = matrix.Length / maskWidth >> 1;
             int height = this.Height;
 
-            int threshold = Byte.MaxValue * matrixSum;
+            int threshold     = Byte.MaxValue * matrixSum;
             int strideTrimmed = stride - 3;
-            int heightOffset = height - halfMaskHeight;
+            int heightOffset  = height - halfMaskHeight;
 
             IntPtr readHandle = readData.Scan0;
             IntPtr writeHandle = writeData.Scan0;
@@ -243,9 +244,9 @@ namespace Models
 
         public BitmapSource Source => NativeMethods.GetBitmapSource(this.bitmap);
 
-        public int Width => bitmap.Width;
+        public int Width => this.bitmap.Width;
 
-        public int Height => bitmap.Height;
+        public int Height => this.bitmap.Height;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetMatrixSum(in int[] matrix)
