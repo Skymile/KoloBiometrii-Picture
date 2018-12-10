@@ -24,7 +24,7 @@ namespace Models
                 {
                     int offset = i * stride + j;
 
-                    if (ptr[offset] == Zero)
+                    if (ptr[offset] == 255)
                         continue;
 
                     int sum = 0;
@@ -83,7 +83,7 @@ namespace Models
                 minutiaes[type] = new List<(int X, int Y)>() { (j / 3, i) };
         }
 
-        public bool IsValid(byte b) => b != Zero;
+        public bool IsValid(byte b) => b != 255;
 
         public static int GetDifferences(Minutiaes first, Minutiaes second)
         {
