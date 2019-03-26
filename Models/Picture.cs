@@ -294,7 +294,19 @@ namespace Models
             }
         }
 
+		public Picture Thinning(IAlgorithm algorithm)
+		{
+			var data = LockBits(ImageLockMode.ReadWrite);
 
-        private readonly Bitmap bitmap;
+			byte* ptr = (byte*)data.Scan0.ToPointer();
+
+			algorithm.Apply(&ptr, data.Stride * data.Height, data.Width, data.Height);
+
+			UnlockBits(data);
+
+			return this;
+		}
+
+		private readonly Bitmap bitmap;
     }
 }

@@ -48,11 +48,12 @@
   <ItemGroup>
     <Compile Include="AlgorithmBase.cs" />
     <Compile Include="IAlgorithm.cs" />
+    <Compile Include="K3M.cs" />
+    <Compile Include="KMM.cs" />
     <Compile Include="MinutiaeType.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Picture.CN.cs.cs" />
     <Compile Include="Picture.cs" />
-    <Compile Include="Picture.KMM.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ZhangSuen.cs" />
   </ItemGroup>
