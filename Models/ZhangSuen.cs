@@ -8,8 +8,10 @@ namespace Models
 {
 	public class ZhangSuen : AlgorithmBase
 	{
-		public override unsafe void Apply(byte** ptr, int length, int width, int height)
+		public override unsafe void Apply(byte** p, int length, int width, int height)
 		{
+			byte* ptr = *p;
+
 			int stride = length / height;
 			int bpp = stride / width;
 
@@ -26,6 +28,30 @@ namespace Models
 				stride, stride - bpp, -bpp, -stride - bpp,
 				-stride
 			};
+
+			int offset = stride + bpp;
+
+			for (int i = offset; i < length - offset; i += bpp)
+				if (ptr[i] == Black)
+				{
+					int count = BlackNeighbours(ptr + i, offsets);
+
+					if (2 <= count && count <= 6 &&
+						Transitions(ptr + i, circular) == 1)
+					{
+						byte p2 = ptr[i - stride];
+						byte p4 = ptr[i + bpp];
+						byte p6 = ptr[i + stride];
+						byte p8 = ptr[i - bpp];
+
+						if ((p2 == White || p4 == White || p6 == White) &&
+							(p8 == White || p4 == White || p6 == White))
+						{
+							for (int k = 0; k < bpp; k++)
+								ptr[i + k] = White;
+						}
+					}
+				}
 
 		}
 
