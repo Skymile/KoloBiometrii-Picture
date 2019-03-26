@@ -1,6 +1,6 @@
 ﻿namespace Models
 {
-	public abstract unsafe class AlgorithmBase
+	public abstract unsafe class AlgorithmBase : IAlgorithm
 	{
 		public virtual void Apply(byte** ptr, int length, int width, int height)
 		{

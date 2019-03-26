@@ -5,19 +5,6 @@ namespace Models
 {
 	public static partial class Algorithms
     {
-		public unsafe static Picture KMM(Picture picture)
-		{
-			var data = picture.LockBits(ImageLockMode.ReadWrite);
-
-			byte* ptr = (byte*)data.Scan0.ToPointer();
-
-			new InternalKMM().Apply(&ptr, data.Stride * data.Height, data.Width, data.Height);
-
-			picture.UnlockBits(data);
-
-			return picture;
-		}
-
 		public unsafe class InternalKMM : AlgorithmBase
         {
 			public override void Apply(byte** p, int length, int width, int height)
@@ -125,6 +112,17 @@ namespace Models
 
     public partial class Picture
     {
-        public Picture KMM() => Algorithms.KMM(this);
+		public unsafe Picture Thinning(IAlgorithm algorithm)
+		{
+			var data = LockBits(ImageLockMode.ReadWrite);
+
+			byte* ptr = (byte*)data.Scan0.ToPointer();
+
+			algorithm.Apply(&ptr, data.Stride * data.Height, data.Width, data.Height);
+
+			UnlockBits(data);
+
+			return this;
+		}
     }
 }

@@ -50,6 +50,13 @@ namespace Models
 							for (int k = 0; k < bpp; k++)
 								ptr[i + k] = White;
 						}
+
+						if ((p2 == White || p4 == White || p8 == White) &&
+							(p2 == White || p6 == White || p8 == White))
+						{
+							for (int k = 0; k < bpp; k++)
+								ptr[i + k] = White;
+						}
 					}
 				}
 
@@ -59,7 +66,7 @@ namespace Models
 		{
 			int count = 0;
 			for (int i = 0; i < circular.Length - 1; i++)
-				if (p[circular[i]] == White || p[circular[i + 1]] == Black)
+				if (p[circular[i]] == White && p[circular[i + 1]] == Black)
 					++count;
 			return count;
 		}

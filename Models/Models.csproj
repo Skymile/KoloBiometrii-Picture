@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AlgorithmBase.cs" />
+    <Compile Include="IAlgorithm.cs" />
     <Compile Include="MinutiaeType.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Picture.CN.cs.cs" />
