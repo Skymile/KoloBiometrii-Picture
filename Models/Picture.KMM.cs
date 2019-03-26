@@ -1,108 +1,109 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing.Imaging;
-using System.Linq;
 
 namespace Models
 {
-    public static class Algorithms
+	public unsafe static class Algorithms
     {
-        public static Picture KMM(Picture picture) =>
-            InternalKMM.Apply(picture);
+		public static Picture KMM(Picture picture)
+		{
+			var data = picture.LockBits(ImageLockMode.ReadWrite);
 
-        private unsafe static class InternalKMM
+			byte* ptr = (byte*)data.Scan0.ToPointer();
+
+			InternalKMM.Apply(ptr, data.Stride * data.Height, data.Width, data.Height);
+
+			picture.UnlockBits(data);
+
+			return picture;
+		}
+
+		private static unsafe class InternalKMM
         {
-            public static Picture Apply(Picture picture) =>
-                Apply(picture, picture.Width * 3, picture.Height);
+			public static void Apply(byte* ptr, int length, int width, int height)
+			{
+				int bpp = length / width / height;
+				int stride = length / height;
 
-            public static Picture Wrap(Picture picture, BitmapData data, Action<BitmapData> action)
-            {
-                try
-                {
-                    action(data);
-                }
-                finally
-                {
-                    picture.UnlockBits(data);
-                }
-                return picture;
-            }
+				var tmpOnes = new List<int>();
+				for (int i = stride + bpp; i < stride * height - stride - bpp; i += bpp)
+					if (ptr[i] == One)
+						tmpOnes.Add(i);
+				int[] ones = tmpOnes.ToArray();
 
-            private static List<int> GetBlackPixels(byte* ptr, int length, int offset)
-            {
-                var tmpOnes = new List<int>();
-                for (int i = offset; i < length - offset; i += 3)
-                    if (ptr[i] == One)
-                        tmpOnes.Add(i);
-                return tmpOnes;
-            }
+				bool hasDeleted = true;
+				while (hasDeleted)
+				{
+					hasDeleted = false;
 
-            public static void Apply(byte* ptr, int stride, int height)
-            {
-                bool AreSidesZeroes(int i) =>
-                    ptr[i + 3] == Zero || ptr[i + stride] == Zero ||
-                    ptr[i - 3] == Zero || ptr[i - stride] == Zero;
+					foreach (int i in ones)
+						if (ptr[i + 3] == Zero || ptr[i + stride] == Zero ||
+							ptr[i - 3] == Zero || ptr[i - stride] == Zero)
+						{
+							ptr[i] = ptr[i + 1] = ptr[i + 2] = Two;
+						}
 
-                bool AreCornersZeroes(int i) => ptr[i] != Two && (
-                    ptr[i + stride + 3] == Zero || ptr[i + stride - 3] == Zero ||
-                    ptr[i - stride + 3] == Zero || ptr[i - stride - 3] == Zero);
+					foreach (int i in ones)
+						if (ptr[i] != Two && (
+							ptr[i + stride + 3] == Zero || ptr[i + stride - 3] == Zero ||
+							ptr[i - stride + 3] == Zero || ptr[i - stride - 3] == Zero))
+						{
+							ptr[i] = ptr[i + 1] = ptr[i + 2] = Three;
+						}
 
-                Action<int> Stage(Func<int, bool> condition, byte setTo) =>
-                    i =>
-                    {
-                        if (condition(i))
-                            ptr[i] = ptr[i + 1] = ptr[i + 2] = setTo;
-                    };
+					foreach (int i in ones)
+						if (Fours.Contains(ComputeSum(i)))
+							ptr[i] = ptr[i + 1] = ptr[i + 2] = Four;
 
-                int[] neighbours = Neighbours(stride);
+					foreach (int i in ones)
+						if (ptr[i] == Four && Deletion.Contains(ComputeSum(i)))
+							ptr[i] = ptr[i + 1] = ptr[i + 2] = Zero;
 
-                Func<int, bool> Contains(HashSet<int> set) => 
-                    i => set.Contains(ComputeSum(i));
+					foreach (int i in ones)
+						if (ptr[i] == Two && Deletion.Contains(ComputeSum(i)))
+						{
+							ptr[i] = ptr[i + 1] = ptr[i + 2] = Zero;
+							hasDeleted = true;
+						}
 
-                Func<int, bool> IsValueToDelete(byte value) =>
-                    i => ptr[i] == value && Deletion.Contains(ComputeSum(i));
+					foreach (int i in ones)
+						if (ptr[i] == Three && Deletion.Contains(ComputeSum(i)))
+						{
+							ptr[i] = ptr[i + 1] = ptr[i + 2] = Zero;
+							hasDeleted = true;
+						}
 
-                List<int> ones = GetBlackPixels(ptr, stride * height, stride + 3);
+					var tmp = new List<int>(ones.Length >> 1);
+					for (int i = 0; i < ones.Length; i++)
+						if (ptr[ones[i]] != Zero)
+							tmp.Add(ones[i]);
+					ones = tmp.ToArray();
+				}
 
-                var sequence = new List<Action<int>>
-                {
-                    Stage(condition: AreSidesZeroes        , setTo: Two),
-                    Stage(condition: AreCornersZeroes      , setTo: Three),
-                    Stage(condition: Contains(Fours)       , setTo: Four),
-                    Stage(condition: IsValueToDelete(Four) , setTo: Zero),
-                    Stage(condition: IsValueToDelete(Two)  , setTo: Zero),
-                    Stage(condition: IsValueToDelete(Three), setTo: Zero)
-                };
+				int ComputeSum(int sumOffset)
+				{
+					int sum = 0;
 
-                int count = 0;
-                while (count != ones.Count)
-                {
-                    count = ones.Count;
+					if (ptr[sumOffset + bpp] != Zero) sum += Matrix[5];
+					if (ptr[sumOffset - bpp] != Zero) sum += Matrix[3];
 
-                    sequence.ForEach(ones.ForEach);
+					sumOffset += stride;
 
-                    ones = ones.Where(i => ptr[i] != Zero).ToList();
-                }
+					if (ptr[sumOffset + bpp] != Zero) sum += Matrix[2];
+					if (ptr[sumOffset      ] != Zero) sum += Matrix[1];
+					if (ptr[sumOffset - bpp] != Zero) sum += Matrix[0];
 
-                int ComputeSum(int sumOffset) => Enumerable.Range(0, 9)
-                    .Where(i => ptr[sumOffset + neighbours[i]] != Zero)
-                    .Sum(i => Matrix[i]);
-            }
+					sumOffset -= stride + stride;
 
-            private static int[] Neighbours(int stride) => new[]
-            {
-                stride  - 3,  stride + 0,  stride + 3,
-                        - 3,         + 0,           3,
-                -stride - 3, -stride + 0, -stride + 3
-            };
+					if (ptr[sumOffset + bpp] != Zero) sum += Matrix[8];
+					if (ptr[sumOffset      ] != Zero) sum += Matrix[7];
+					if (ptr[sumOffset - bpp] != Zero) sum += Matrix[6];
 
-            public static Picture Apply(Picture picture, int stride, int height) => 
-                Wrap(picture,
-                    picture.LockBits(ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb),
-                    data => Apply((byte*)data.Scan0.ToPointer(), stride, height)
-                );
+					return sum;
+				}
+			}
 
-            private static readonly int[] Matrix =
+			private static readonly int[] Matrix =
             {
                 128,  1, 2,
                  64,  0, 4,
