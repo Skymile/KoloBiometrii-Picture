@@ -3,25 +3,27 @@ using System.Drawing.Imaging;
 
 namespace Models
 {
-	public unsafe static class Algorithms
+	public static partial class Algorithms
     {
-		public static Picture KMM(Picture picture)
+		public unsafe static Picture KMM(Picture picture)
 		{
 			var data = picture.LockBits(ImageLockMode.ReadWrite);
 
 			byte* ptr = (byte*)data.Scan0.ToPointer();
 
-			InternalKMM.Apply(ptr, data.Stride * data.Height, data.Width, data.Height);
+			new InternalKMM().Apply(&ptr, data.Stride * data.Height, data.Width, data.Height);
 
 			picture.UnlockBits(data);
 
 			return picture;
 		}
 
-		private static unsafe class InternalKMM
+		public unsafe class InternalKMM : AlgorithmBase
         {
-			public static void Apply(byte* ptr, int length, int width, int height)
+			public override void Apply(byte** p, int length, int width, int height)
 			{
+				byte* ptr = *p;
+
 				int bpp = length / width / height;
 				int stride = length / height;
 
