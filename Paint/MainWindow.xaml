@@ -43,7 +43,9 @@
             <ComboBox SelectedItem="{Binding CurrentTool}" ItemsSource="{Binding Tools}" Margin="5" />
         </StackPanel>
 
-        <Image Grid.Column="1" Source="{Binding MainSource}" Margin="5" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+        <Image Grid.Column="1" Source="{Binding MainSource}" Margin="5" RenderOptions.BitmapScalingMode="NearestNeighbor" 
+               MouseMove="Image_MouseMove"
+               />
 
     </Grid>
 </Window>

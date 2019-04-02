@@ -67,6 +67,31 @@ namespace Paint
 		private byte r;
 		private byte g;
 		private byte b;
+
+		private void Image_MouseMove(object sender, MouseEventArgs e)
+		{
+			if (e.LeftButton == MouseButtonState.Pressed &&
+				CurrentTool == ToolType.Pencil)
+			{
+				(int X, int Y) = GetPosition((System.Windows.Controls.Image)sender, e);
+				this.picture.SetPixel(
+					X, Y, 
+					System.Drawing.Color.FromArgb(R, G, B)
+				);
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(picture)));
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
+			}
+		}
+
+		private (int X, int Y) GetPosition(System.Windows.Controls.Image img, MouseEventArgs e)
+		{
+			System.Windows.Point p = e.GetPosition(img);
+
+			int x = (int)(p.X / img.ActualWidth * picture.Width  );
+			int y = (int)(p.Y / img.ActualHeight * picture.Height);
+
+			return (x, y);
+		}
 	}
 
 	public enum ToolType
