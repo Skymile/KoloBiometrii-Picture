@@ -148,7 +148,7 @@ namespace Paint
 								p[i + o + 2] < value.B + threshold
 							)
 							{
-								newValues.Add(i);
+								newValues.Add(i + o);
 								anyChange = true;
 							}
 						}
