@@ -7,6 +7,22 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"   />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel>
+            <Button Content="Load" Margin="5" Padding="5" />
+            <Button Content="Save" Margin="5" Padding="5" />
+            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding R}" />
+            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding G}" />
+            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding B}" />
+            <Rectangle Margin="5" Height="40" Fill="{Binding Fill}" />
+            <ListView SelectedItem="{Binding CurrentTool}" ItemsSource="{Binding Tools}" />
+        </StackPanel>
+
+        <Image Grid.Column="1" Source="{Binding MainSource}" Margin="5" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+
     </Grid>
 </Window>
