@@ -41,10 +41,12 @@
             </Slider>
             <Rectangle Margin="5" Height="40" Fill="{Binding Fill}" />
             <ComboBox SelectedItem="{Binding CurrentTool}" ItemsSource="{Binding Tools}" Margin="5" />
+            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Threshold}" />
         </StackPanel>
 
         <Image Grid.Column="1" Source="{Binding MainSource}" Margin="5" RenderOptions.BitmapScalingMode="NearestNeighbor" 
                MouseMove="Image_MouseMove"
+               MouseDown="Image_MouseDown"
                />
 
     </Grid>
