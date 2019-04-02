@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -14,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Models;
 
 namespace Paint
 {
@@ -32,7 +34,7 @@ namespace Paint
 		public byte G { get => g; set => SetChannel(value, ref g); }
 		public byte B { get => b; set => SetChannel(value, ref b); }
 
-		public Brush Fill => new SolidColorBrush(Color.FromRgb(R, G, B));
+		public System.Windows.Media.Brush Fill => new SolidColorBrush(System.Windows.Media.Color.FromRgb(R, G, B));
 
 		public event PropertyChangedEventHandler PropertyChanged;
 
@@ -48,8 +50,29 @@ namespace Paint
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 		}
 
+		private ToolType currentTool = ToolType.Pencil;
+
+		public ToolType CurrentTool
+		{
+			get => currentTool;
+			set => Set(value, ref currentTool);
+		}
+
+		private Bitmap picture = new Bitmap("lenna.png");
+
+		public ImageSource MainSource => picture.GetBitmapSource();
+
+		public ToolType[] Tools => (ToolType[])Enum.GetValues(typeof(ToolType));
+
 		private byte r;
 		private byte g;
 		private byte b;
+	}
+
+	public enum ToolType
+	{
+		Pencil,
+		LocalFill,
+		GlobalFill
 	}
 }

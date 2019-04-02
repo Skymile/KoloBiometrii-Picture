@@ -15,11 +15,32 @@
         <StackPanel>
             <Button Content="Load" Margin="5" Padding="5" />
             <Button Content="Save" Margin="5" Padding="5" />
-            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding R}" />
-            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding G}" />
-            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding B}" />
+            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding R}" >
+                <Slider.Background>
+                    <LinearGradientBrush EndPoint="0,1" StartPoint="0.5,0">
+                        <GradientStop Color="Black" Offset="1"/>
+                        <GradientStop Color="Red"/>
+                    </LinearGradientBrush>
+                </Slider.Background>
+            </Slider>
+            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding G}" >
+                <Slider.Background>
+                    <LinearGradientBrush EndPoint="0,1" StartPoint="0.5,0">
+                        <GradientStop Color="Black" Offset="1"/>
+                        <GradientStop Color="Lime"/>
+                    </LinearGradientBrush>
+                </Slider.Background>
+            </Slider>
+            <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding B}" >
+                <Slider.Background>
+                    <LinearGradientBrush EndPoint="0,1" StartPoint="0.5,0">
+                        <GradientStop Color="Black" Offset="1"/>
+                        <GradientStop Color="Blue"/>
+                    </LinearGradientBrush>
+                </Slider.Background>
+            </Slider>
             <Rectangle Margin="5" Height="40" Fill="{Binding Fill}" />
-            <ListView SelectedItem="{Binding CurrentTool}" ItemsSource="{Binding Tools}" />
+            <ComboBox SelectedItem="{Binding CurrentTool}" ItemsSource="{Binding Tools}" Margin="5" />
         </StackPanel>
 
         <Image Grid.Column="1" Source="{Binding MainSource}" Margin="5" RenderOptions.BitmapScalingMode="NearestNeighbor" />
