@@ -25,13 +25,22 @@ namespace Paint
 		public MainWindow()
 		{
 			InitializeComponent();
+			this.DataContext = this;
 		}
 
-		public byte R { get => r; set => Set(value, ref r); }
-		public byte G { get => g; set => Set(value, ref g); }
-		public byte B { get => b; set => Set(value, ref b); }
+		public byte R { get => r; set => SetChannel(value, ref r); }
+		public byte G { get => g; set => SetChannel(value, ref g); }
+		public byte B { get => b; set => SetChannel(value, ref b); }
+
+		public Brush Fill => new SolidColorBrush(Color.FromRgb(R, G, B));
 
 		public event PropertyChangedEventHandler PropertyChanged;
+
+		private void SetChannel(byte value, ref byte field, [CallerMemberName] string name = "")
+		{
+			Set(value, ref field, name);
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Fill)));
+		}
 
 		private void Set<T>(T value, ref T field, [CallerMemberName] string name = "")
 		{
