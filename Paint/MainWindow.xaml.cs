@@ -162,9 +162,34 @@ namespace Paint
 				picture.UnlockBits(data);
 				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
 			}
+			else if (CurrentTool == ToolType.GlobalFill)
+			{
+				BitmapData data = picture.LockBits(
+					new System.Drawing.Rectangle(System.Drawing.Point.Empty, picture.Size),
+					ImageLockMode.ReadWrite,
+					picture.PixelFormat
+				);
+
+				byte* p = (byte*)data.Scan0.ToPointer();
+
+				int bpp = System.Drawing.Image.GetPixelFormatSize(picture.PixelFormat) / 8;
+				int stride = picture.Width * bpp;
+				int length = stride * picture.Height;
+
+				(int X, int Y) = GetPosition((System.Windows.Controls.Image)sender, e);
+				int current = X * bpp + Y * stride;
+
+				byte value = p[current];
+
+				for (int i = 0; i < length; i++)
+					p[i] = p[i] > value - this.Threshold && p[i] < value + this.Threshold ? byte.MaxValue : byte.MinValue;
+
+				picture.UnlockBits(data);
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
+			}
 		}
 
-		private unsafe void GlobalFill_Click(object sender, RoutedEventArgs e)
+		private unsafe void BinarizationByThreshold_Click(object sender, RoutedEventArgs e)
 		{
 			BitmapData data = picture.LockBits(
 				new System.Drawing.Rectangle(System.Drawing.Point.Empty, picture.Size),
@@ -177,11 +202,6 @@ namespace Paint
 			int bpp = System.Drawing.Image.GetPixelFormatSize(picture.PixelFormat) / 8;
 			int stride = picture.Width * bpp;
 			int length = stride * picture.Height;
-
-
-
-
-
 
 			picture.UnlockBits(data);
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
