@@ -61,7 +61,7 @@ namespace Paint
 			set => Set(value, ref currentTool);
 		}
 
-		private Bitmap picture = new Bitmap("lenna.png");
+		private Bitmap picture = new Bitmap("apple.png");
 
 		public ImageSource MainSource => picture.GetBitmapSource();
 
@@ -108,12 +108,11 @@ namespace Paint
 
 				byte* p = (byte*)data.Scan0.ToPointer();
 
-				(int X, int Y) = GetPosition((System.Windows.Controls.Image)sender, e);
-
 				int bpp = System.Drawing.Image.GetPixelFormatSize(picture.PixelFormat) / 8;
 				int stride = picture.Width * bpp;
 				int length = stride * picture.Height;
 
+				(int X, int Y) = GetPosition((System.Windows.Controls.Image)sender, e);
 				int current = X * bpp + Y * stride;
 
 				(byte R, byte G, byte B) value = (p[current], p[current + 1], p[current + 2]);
@@ -134,25 +133,20 @@ namespace Paint
 
 					var newValues = new List<int>();
 					foreach (int i in visited)
-					{
 						foreach (int o in offsets)
 						{
 							if (!visited.Contains(i + o) &&
 								i + o > 0 && i + o + 2 < length &&
 
-								p[i + o + 0] > value.R - threshold &&
-								p[i + o + 0] < value.R + threshold &&
-								p[i + o + 1] > value.G - threshold &&
-								p[i + o + 1] < value.G + threshold &&
-								p[i + o + 2] > value.B - threshold &&
-								p[i + o + 2] < value.B + threshold
+								p[i + o + 0] > value.R - threshold && p[i + o + 0] < value.R + threshold &&
+								p[i + o + 1] > value.G - threshold && p[i + o + 1] < value.G + threshold &&
+								p[i + o + 2] > value.B - threshold && p[i + o + 2] < value.B + threshold
 							)
 							{
 								newValues.Add(i + o);
 								anyChange = true;
 							}
 						}
-					}
 
 					foreach (int i in newValues)
 						visited.Add(i);
@@ -168,6 +162,29 @@ namespace Paint
 				picture.UnlockBits(data);
 				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
 			}
+		}
+
+		private unsafe void GlobalFill_Click(object sender, RoutedEventArgs e)
+		{
+			BitmapData data = picture.LockBits(
+				new System.Drawing.Rectangle(System.Drawing.Point.Empty, picture.Size),
+				ImageLockMode.ReadWrite,
+				picture.PixelFormat
+			);
+
+			byte* p = (byte*)data.Scan0.ToPointer();
+
+			int bpp = System.Drawing.Image.GetPixelFormatSize(picture.PixelFormat) / 8;
+			int stride = picture.Width * bpp;
+			int length = stride * picture.Height;
+
+
+
+
+
+
+			picture.UnlockBits(data);
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
 		}
 	}
 
