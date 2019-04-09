@@ -203,6 +203,58 @@ namespace Paint
 			int stride = picture.Width * bpp;
 			int length = stride * picture.Height;
 
+			for (int i = 0; i < length; i++)
+				p[i] = p[i] > this.Threshold ? byte.MaxValue : byte.MinValue;
+
+			picture.UnlockBits(data);
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
+		}
+
+		private unsafe void Otsu_Click(object sender, RoutedEventArgs e)
+		{
+			BitmapData data = picture.LockBits(
+				new System.Drawing.Rectangle(System.Drawing.Point.Empty, picture.Size),
+				ImageLockMode.ReadWrite,
+				picture.PixelFormat
+			);
+
+			byte* p = (byte*)data.Scan0.ToPointer();
+
+			int bpp = System.Drawing.Image.GetPixelFormatSize(picture.PixelFormat) / 8;
+			int stride = picture.Width * bpp;
+			int length = stride * picture.Height;
+
+			int[] hist = new int[256];
+			for (int i = 0; i < length; i += 3)
+				++hist[p[i]];
+
+			int back = 0;
+			int sumB = 0;
+
+			float variance = float.MinValue;
+
+			for (int i = 0; i < 256; i++)
+			{
+				back += hist[i];
+				int fore = length - back;
+				sumB += i * hist[i];
+
+				float backMean = (float)sumB / back;
+				float foreMean = (float)(length - sumB) / fore;
+
+				float varBetween =
+					(float)back * fore * (backMean - foreMean) * (backMean - foreMean);
+
+				if (varBetween > variance)
+				{
+					variance = varBetween;
+					this.Threshold = (byte)i;
+				}
+			}
+
+			for (int i = 0; i < length; i++)
+				p[i] = p[i] > this.Threshold ? byte.MaxValue : byte.MinValue;
+
 			picture.UnlockBits(data);
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
 		}
