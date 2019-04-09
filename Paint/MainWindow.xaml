@@ -44,6 +44,7 @@
             <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Threshold}" />
             <Button Content="Binarization by Threshold" Click="BinarizationByThreshold_Click" />
             <Button Content="Otsu" Click="Otsu_Click" />
+            <Button Content="Niblack" Click="Niblack_Click" />
         </StackPanel>
 
         <Image Grid.Column="1" Source="{Binding MainSource}" Margin="5" RenderOptions.BitmapScalingMode="NearestNeighbor" 
