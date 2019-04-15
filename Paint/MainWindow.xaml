@@ -42,9 +42,10 @@
             <Rectangle Margin="5" Height="40" Fill="{Binding Fill}" />
             <ComboBox SelectedItem="{Binding CurrentTool}" ItemsSource="{Binding Tools}" Margin="5" />
             <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Threshold}" />
-            <Button Content="Binarization by Threshold" Click="BinarizationByThreshold_Click" />
-            <Button Content="Otsu" Click="Otsu_Click" />
-            <Button Content="Niblack" Click="Niblack_Click" />
+            <Button Margin="5" Padding="5" Content="Binarization by Threshold" Click="BinarizationByThreshold_Click" />
+            <Button Margin="5" Padding="5" Content="Otsu"                      Click="Otsu_Click"                    />
+            <Button Margin="5" Padding="5" Content="Niblack"                   Click="Niblack_Click"                 />
+            <Button Margin="5" Padding="5" Content="Reset"                     Click="Reset_Click"                   />
         </StackPanel>
 
         <Image Grid.Column="1" Source="{Binding MainSource}" Margin="5" RenderOptions.BitmapScalingMode="NearestNeighbor" 

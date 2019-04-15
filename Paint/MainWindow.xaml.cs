@@ -3,19 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+
 using Models;
 
 namespace Paint
@@ -215,12 +207,12 @@ namespace Paint
 			BitmapData data = picture.LockBits(
 				new System.Drawing.Rectangle(System.Drawing.Point.Empty, picture.Size),
 				ImageLockMode.ReadWrite,
-				picture.PixelFormat
+				System.Drawing.Imaging.PixelFormat.Format24bppRgb
 			);
 
 			byte* p = (byte*)data.Scan0.ToPointer();
 
-			int bpp = System.Drawing.Image.GetPixelFormatSize(picture.PixelFormat) / 8;
+			int bpp = 3;
 			int stride = picture.Width * bpp;
 			int length = stride * picture.Height;
 
@@ -279,12 +271,12 @@ namespace Paint
 			BitmapData data = picture.LockBits(
 				new System.Drawing.Rectangle(System.Drawing.Point.Empty, picture.Size),
 				ImageLockMode.ReadWrite,
-				picture.PixelFormat
+				System.Drawing.Imaging.PixelFormat.Format24bppRgb
 			);
 
 			byte* p = (byte*)data.Scan0.ToPointer();
 
-			int bpp = System.Drawing.Image.GetPixelFormatSize(picture.PixelFormat) / 8;
+			int bpp = 3;
 			int stride = picture.Width * bpp;
 			int length = stride * picture.Height;
 
@@ -326,12 +318,10 @@ namespace Paint
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
 		}
 
-	}
-
-	public enum ToolType
-	{
-		Pencil,
-		LocalFill,
-		GlobalFill
+		private void Reset_Click(object sender, RoutedEventArgs e)
+		{
+			picture = new Bitmap("apple.png");
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
+		}
 	}
 }
