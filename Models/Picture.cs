@@ -307,6 +307,6 @@ namespace Models
 			return this;
 		}
 
-		private readonly Bitmap bitmap;
+		public readonly Bitmap bitmap;
     }
 }

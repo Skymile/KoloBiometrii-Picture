@@ -58,7 +58,7 @@ namespace Paint
 			set => Set(value, ref currentTool);
 		}
 
-		private Bitmap picture = new Bitmap("apple.png");
+		private Bitmap picture = new Bitmap("thinning.png");
 
 		public ImageSource MainSource => picture.GetBitmapSource();
 
@@ -443,8 +443,8 @@ namespace Paint
 
 			this.Filename = filename;
 		}
-
-		private string Filename = "apple.png";
+		
+		private string Filename = "thinning.png";
 
 		private static readonly OpenFileDialog open = new OpenFileDialog
 		{
@@ -457,5 +457,20 @@ namespace Paint
 			Title = "Wybierz obraz",
 			InitialDirectory = Directory.GetCurrentDirectory()
 		};
+
+		private void KMM_Click(object sender, RoutedEventArgs e) => 
+			ApplyAlgorithm(new KMM());
+
+		private void K3M_Click(object sender, RoutedEventArgs e) => 
+			ApplyAlgorithm(new K3M());
+
+		private void ZhangSuen_Click(object sender, RoutedEventArgs e) => 
+			ApplyAlgorithm(new ZhangSuen());
+
+		private void ApplyAlgorithm(IAlgorithm algorithm)
+		{
+			this.picture = new Picture(this.Filename).Apply(algorithm).bitmap;
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
+		}
 	}
 }

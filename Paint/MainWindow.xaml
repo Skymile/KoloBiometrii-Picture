@@ -48,6 +48,11 @@
             <Button Margin="5" Padding="5" Content="Sauvola"                   Click="Sauvola_Click"                 />
             <Button Margin="5" Padding="5" Content="Phansalkar"                Click="Phansalkar_Click"              />
             <Button Margin="5" Padding="5" Content="Bernsen"                   Click="Bernsen_Click"                 />
+            
+            <Button Margin="5" Padding="5" Content="KMM"                       Click="KMM_Click"                     />
+            <Button Margin="5" Padding="5" Content="K3M"                       Click="K3M_Click"                     />
+            <Button Margin="5" Padding="5" Content="Zhang-Suen"                Click="ZhangSuen_Click"               />
+
             <Button Margin="5" Padding="5" Content="Reset"                     Click="Reset_Click"                   />
         </StackPanel>
 
