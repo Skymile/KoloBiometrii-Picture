@@ -378,8 +378,44 @@ namespace Paint
 					Grid.SetRow   (txt[i], i);
 				}
 
-				if (window.ShowDialog() == true)
-					algorithm = (T)ctor.Invoke(txt.Select(i => i.Text).ToArray());
+				var ok = new Button { Content = "Ok", IsDefault = true };
+				var cancel = new Button { Content = "Cancel", IsCancel = true };
+
+				ok.Padding = ok.Margin = cancel.Padding = cancel.Margin = new Thickness(5);
+
+				grid.Children.Add(ok);
+				grid.Children.Add(cancel);
+
+				Grid.SetColumn(ok, 0);
+				Grid.SetColumn(cancel, 1);
+
+				Grid.SetRow(ok    , parameters.Length);
+				Grid.SetRow(cancel, parameters.Length);
+
+				ok.Click += Ok_Click;
+
+				void Ok_Click(object sender, RoutedEventArgs e)
+				{
+					window.DialogResult = true;
+					window.Close();
+				};
+
+				try
+				{
+					if (window.ShowDialog() == true)
+					{
+						object[] param = new object[parameters.Length];
+
+						for (int i = 0; i < txt.Length; i++)
+							param[i] = Convert.ChangeType(txt[i].Text, parameters[i].ParameterType);
+
+						algorithm = (T)ctor.Invoke(param);
+					}
+				}
+				finally
+				{
+					ok.Click -= Ok_Click;
+				}
 			}
 
 			if (algorithm is null)
@@ -387,6 +423,8 @@ namespace Paint
 
 			this.picture = new Picture(this.Filename).Apply(algorithm).bitmap;
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
+
 		}
+
 	}
 }
