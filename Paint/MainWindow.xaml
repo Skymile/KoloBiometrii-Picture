@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Paint"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="800" Width="800">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -13,8 +13,8 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel>
-            <Button Content="Load" Margin="5" Padding="5" />
-            <Button Content="Save" Margin="5" Padding="5" />
+            <Button Content="Load" Margin="5" Padding="5" Click="Load_Click" />
+            <Button Content="Save" Margin="5" Padding="5" Click="Save_Click" />
             <Slider Width="150" Margin="5" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding R}" >
                 <Slider.Background>
                     <LinearGradientBrush EndPoint="0,1" StartPoint="0.5,0">
@@ -45,6 +45,9 @@
             <Button Margin="5" Padding="5" Content="Binarization by Threshold" Click="BinarizationByThreshold_Click" />
             <Button Margin="5" Padding="5" Content="Otsu"                      Click="Otsu_Click"                    />
             <Button Margin="5" Padding="5" Content="Niblack"                   Click="Niblack_Click"                 />
+            <Button Margin="5" Padding="5" Content="Sauvola"                   Click="Sauvola_Click"                 />
+            <Button Margin="5" Padding="5" Content="Phansalkar"                Click="Phansalkar_Click"              />
+            <Button Margin="5" Padding="5" Content="Bernsen"                   Click="Bernsen_Click"                 />
             <Button Margin="5" Padding="5" Content="Reset"                     Click="Reset_Click"                   />
         </StackPanel>
 

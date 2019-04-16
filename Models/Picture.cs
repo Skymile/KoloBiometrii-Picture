@@ -294,7 +294,7 @@ namespace Models
             }
         }
 
-		public Picture Thinning(IAlgorithm algorithm)
+		public Picture Apply(IAlgorithm algorithm)
 		{
 			var data = LockBits(ImageLockMode.ReadWrite);
 

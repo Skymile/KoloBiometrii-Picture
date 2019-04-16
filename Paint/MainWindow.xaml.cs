@@ -3,12 +3,17 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
+using Microsoft.Win32;
+
 using Models;
+
+using PixelFormat = System.Drawing.Imaging.PixelFormat;
 
 namespace Paint
 {
@@ -23,11 +28,11 @@ namespace Paint
 			this.DataContext = this;
 		}
 
-		public byte R { get => r; set => SetChannel(value, ref r); }
-		public byte G { get => g; set => SetChannel(value, ref g); }
-		public byte B { get => b; set => SetChannel(value, ref b); }
+		public byte R { get => this.r; set => SetChannel(value, ref this.r); }
+		public byte G { get => this.g; set => SetChannel(value, ref this.g); }
+		public byte B { get => this.b; set => SetChannel(value, ref this.b); }
 
-		public byte Threshold { get => threshold; set => Set(value, ref threshold); }
+		public byte Threshold { get => this.threshold; set => Set(value, ref this.threshold); }
 
 		public System.Windows.Media.Brush Fill => new SolidColorBrush(System.Windows.Media.Color.FromRgb(R, G, B));
 
@@ -320,8 +325,129 @@ namespace Paint
 
 		private void Reset_Click(object sender, RoutedEventArgs e)
 		{
-			picture = new Bitmap("apple.png");
+			Load(this.Filename);
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
 		}
+
+		private void Sauvola_Click(object sender, RoutedEventArgs e)
+		{
+			double div = 2;
+			double threshold = 0.5;
+
+			NiblackGeneral((std, mean) => mean * (1 + threshold * (std / div - 1)));
+		}
+
+		private void Phansalkar_Click(object sender, RoutedEventArgs e)
+		{
+			double div = 2;
+			double threshold = 0.5;
+
+			double p = 2;
+			double q = 10;
+
+			NiblackGeneral((std, mean) => mean * (1 + p * Math.Exp(-q * mean) + threshold * (std / div - 1)));
+		}
+
+		private unsafe void Bernsen_Click(object sender, RoutedEventArgs e)
+		{
+			int mainThreshold = 15;
+			int windowSize = 3;
+
+			BitmapData data = picture.LockBits(
+				new System.Drawing.Rectangle(System.Drawing.Point.Empty, picture.Size),
+				ImageLockMode.ReadWrite,
+				System.Drawing.Imaging.PixelFormat.Format24bppRgb
+			);
+
+			byte* p = (byte*)data.Scan0.ToPointer();
+
+			int bpp = 3;
+			int stride = picture.Width * bpp;
+			int length = picture.Height * stride;
+
+			int[] offsets =
+			{
+				-bpp - stride, -stride, -stride + bpp,
+				-bpp         ,       0,           bpp,
+				-bpp + stride,  stride,  stride + bpp,
+			};
+
+			if (offsets.Length == 0)
+				return;
+
+			int offset = windowSize * bpp + windowSize * stride;
+
+			byte[] write = new byte[length];
+
+			for (int i = offset; i < write.Length - offset; ++i)
+			{
+				int min = p[i + offsets[0]];
+				int max = p[i + offsets[0]];
+
+				for (int j = 1; j < offsets.Length; ++j)
+				{
+					int o = i + offsets[j];
+
+					if (p[o] > max)
+						max = p[o];
+					else if (p[o] < min)
+						min = p[o];
+				}
+
+				int contrast = max - min;
+				byte mean = (byte)((max + min) / 2);
+
+				byte threshold = contrast < mainThreshold ? (byte)128 : mean;
+
+				write[i] = p[i] > threshold ? byte.MaxValue : byte.MinValue;
+			}
+
+			for (int i = 0; i < write.Length; ++i)
+				p[i] = write[i];
+
+			picture.UnlockBits(data);
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
+		}
+
+		private void Save_Click(object sender, RoutedEventArgs e)
+		{
+			if (save.ShowDialog() == true)
+				picture.Save(save.FileName);
+		}
+
+		private void Load_Click(object sender, RoutedEventArgs e)
+		{
+			if (open.ShowDialog() == true)
+				Load(open.FileName);
+		}
+
+		private void Load(string filename)
+		{
+			picture = new Bitmap(filename);
+
+			if (Image.GetPixelFormatSize(picture.PixelFormat) != 24)
+			{
+				var bmp = new Bitmap(picture.Width, picture.Height, PixelFormat.Format24bppRgb);
+				using (var g = Graphics.FromImage(bmp))
+					g.DrawImage(picture, PointF.Empty);
+				picture = bmp;
+			}
+
+			this.Filename = filename;
+		}
+
+		private string Filename = "apple.png";
+
+		private static readonly OpenFileDialog open = new OpenFileDialog
+		{
+			Title = "Wybierz obraz",
+			InitialDirectory = Directory.GetCurrentDirectory()
+		};
+
+		private static readonly SaveFileDialog save = new SaveFileDialog
+		{
+			Title = "Wybierz obraz",
+			InitialDirectory = Directory.GetCurrentDirectory()
+		};
 	}
 }

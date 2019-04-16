@@ -43,10 +43,10 @@ namespace Biometrics
         {
             var kmm = new Picture[this.pictures.Length];
             var sw = Stopwatch.StartNew();
-            kmm[0] = this.pictures[0].Thinning(new K3M());
+            kmm[0] = this.pictures[0].Apply(new K3M());
             this.Status.Content = $"ms: {sw.ElapsedMilliseconds} ticks: {sw.ElapsedTicks}";
             for (int i = 1; i < kmm.Length; i++)
-                kmm[i] = this.pictures[i].Thinning(new K3M());
+                kmm[i] = this.pictures[i].Apply(new K3M());
 
             var cn = new Minutiaes[kmm.Length];
             for (int i = 0; i < kmm.Length; i++)
