@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -345,8 +346,7 @@ namespace Paint
 				var window = new Window
 				{
 					Title = "Podaj parametry",
-					SizeToContent = SizeToContent.Height,
-					MinWidth = 200
+					MinWidth = 50
 				};
 
 				var grid = new Grid();
@@ -356,7 +356,7 @@ namespace Paint
 				grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
 				var labels = new Label[parameters.Length];
-				var txt = new TextBox[parameters.Length];
+				var txt    = new TextBox[parameters.Length];
 
 				for (int i = 0; i <= parameters.Length; i++)
 					grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -364,7 +364,12 @@ namespace Paint
 				for (int i = 0; i < labels.Length; i++)
 				{
 					labels[i] = new Label { Content = parameters[i].Name };
-					txt[i] = new TextBox { MinWidth = 160 };
+					txt[i] = new TextBox { MinWidth = 20 };
+
+					labels[i].Padding = labels[i].Margin = txt[i].Padding = txt[i].Margin = new Thickness(5);
+
+					grid.Children.Add(labels[i]);
+					grid.Children.Add(txt[i]);
 
 					Grid.SetColumn(labels[i], 0);
 					Grid.SetRow   (labels[i], i);
@@ -374,9 +379,7 @@ namespace Paint
 				}
 
 				if (window.ShowDialog() == true)
-				{
-
-				}	
+					algorithm = (T)ctor.Invoke(txt.Select(i => i.Text).ToArray());
 			}
 
 			if (algorithm is null)
