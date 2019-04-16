@@ -192,26 +192,8 @@ namespace Paint
 			}
 		}
 
-		private unsafe void BinarizationByThreshold_Click(object sender, RoutedEventArgs e)
-		{
-			BitmapData data = picture.LockBits(
-				new System.Drawing.Rectangle(System.Drawing.Point.Empty, picture.Size),
-				ImageLockMode.ReadWrite,
-				picture.PixelFormat
-			);
-
-			byte* p = (byte*)data.Scan0.ToPointer();
-
-			int bpp = System.Drawing.Image.GetPixelFormatSize(picture.PixelFormat) / 8;
-			int stride = picture.Width * bpp;
-			int length = stride * picture.Height;
-
-			for (int i = 0; i < length; i++)
-				p[i] = p[i] > this.Threshold ? byte.MaxValue : byte.MinValue;
-
-			picture.UnlockBits(data);
-			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
-		}
+		private unsafe void BinarizationByThreshold_Click(object sender, RoutedEventArgs e) => 
+			ApplyAlgorithm<Level>();
 
 		private unsafe void Otsu_Click(object sender, RoutedEventArgs e)
 		{
@@ -275,8 +257,6 @@ namespace Paint
 		private void Niblack_Click(object sender, RoutedEventArgs e) => 
 			NiblackGeneral((std, mean) => std * 0.5 + mean);
 
-		public delegate double Compute(double std, double mean);
-
 		private unsafe void NiblackGeneral(Compute computeResult)
 		{
 			BitmapData data = picture.LockBits(
@@ -284,46 +264,6 @@ namespace Paint
 				ImageLockMode.ReadWrite,
 				System.Drawing.Imaging.PixelFormat.Format24bppRgb
 			);
-
-			byte* p = (byte*)data.Scan0.ToPointer();
-
-			int bpp = 3;
-			int stride = picture.Width * bpp;
-			int length = stride * picture.Height;
-
-			int offset = stride + bpp;
-
-			int[] offsets =
-			{
-				-bpp - stride, -stride, -stride + bpp,
-				-bpp         ,       0,           bpp,
-				-bpp + stride,  stride,  stride + bpp,
-			};
-
-			byte[] write = new byte[length];
-
-			for (int i = offset; i < length - offset; i += 3)
-			{
-				int sum = 0;
-				foreach (int o in offsets)
-					sum += p[i + o];
-
-				double mean = (double)sum / offsets.Length;
-				double std = 0;
-
-				foreach (int o in offsets)
-					std += (p[i + o] - mean) * (p[i + o] - mean);
-				std /= offsets.Length - 1;
-				std = Math.Sqrt(std);
-
-				double result = computeResult(std, mean);
-
-				write[i] = write[i + 1] = write[i + 2] =
-					p[i] >= result ? byte.MaxValue : byte.MinValue;
-			}
-
-			for (int i = 0; i < length; i++)
-				p[i] = write[i];
 
 			picture.UnlockBits(data);
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));

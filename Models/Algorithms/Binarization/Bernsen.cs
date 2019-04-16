@@ -2,12 +2,16 @@
 {
 	public class Bernsen : AlgorithmBase
 	{
+		public Bernsen(int threshold) => this.Threshold = threshold;
+
+		public int Threshold { get; private set; }
+
 		public override unsafe void Apply(byte** ptr, int length, int width, int height)
 		{
 			byte* p = *ptr;
 
-			int mainThreshold = 60;
 			int windowSize = 3;
+
 			int bpp = 3;
 			int stride = width * bpp;
 
@@ -43,7 +47,7 @@
 				int contrast = max - min;
 				byte mean = (byte)((max + min) / 2);
 
-				byte threshold = contrast < mainThreshold ? (byte)128 : mean;
+				byte threshold = contrast < Threshold ? (byte)128 : mean;
 				byte result = p[i] > threshold ? byte.MaxValue : byte.MinValue;
 
 				for (int j = 0; j < bpp; j++)

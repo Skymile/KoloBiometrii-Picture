@@ -49,6 +49,8 @@
     <Compile Include="Algorithms\Base\AlgorithmBase.cs" />
     <Compile Include="Algorithms\Base\IAlgorithm.cs" />
     <Compile Include="Algorithms\Binarization\Bernsen.cs" />
+    <Compile Include="Algorithms\Binarization\Level.cs" />
+    <Compile Include="Algorithms\Binarization\Niblack.cs" />
     <Compile Include="Algorithms\Thinning\K3M.cs" />
     <Compile Include="Algorithms\Thinning\KMM.cs" />
     <Compile Include="Algorithms\MinutiaeType.cs" />
