@@ -232,7 +232,7 @@ namespace Models
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BitmapData LockBits(ImageLockMode mode) =>
-            LockBits(mode, this.bitmap.PixelFormat);
+            LockBits(mode, PixelFormat.Format24bppRgb);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BitmapData LockBits(ImageLockMode mode, PixelFormat format) =>
