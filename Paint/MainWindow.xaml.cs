@@ -6,6 +6,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -312,7 +313,7 @@ namespace Paint
 		{
 			picture = new Bitmap(filename);
 
-			if (Image.GetPixelFormatSize(picture.PixelFormat) != 24)
+			if (System.Drawing.Image.GetPixelFormatSize(picture.PixelFormat) != 24)
 			{
 				var bmp = new Bitmap(picture.Width, picture.Height, PixelFormat.Format24bppRgb);
 				using (var g = Graphics.FromImage(bmp))
@@ -332,9 +333,56 @@ namespace Paint
 		private void ApplyAlgorithm<T>()
 			where T : IAlgorithm
 		{
-			this.picture = new Picture(this.Filename).Apply(
-				Activator.CreateInstance<T>()	
-			).bitmap;
+			var ctor = typeof(T).GetConstructors()[0];
+
+			var parameters = ctor.GetParameters();
+
+			T algorithm = default;
+			if (parameters.Length == 0)
+				algorithm = Activator.CreateInstance<T>();
+			else
+			{
+				var window = new Window
+				{
+					Title = "Podaj parametry",
+					SizeToContent = SizeToContent.Height,
+					MinWidth = 200
+				};
+
+				var grid = new Grid();
+				window.Content = grid;
+
+				grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+				grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+				var labels = new Label[parameters.Length];
+				var txt = new TextBox[parameters.Length];
+
+				for (int i = 0; i <= parameters.Length; i++)
+					grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+				for (int i = 0; i < labels.Length; i++)
+				{
+					labels[i] = new Label { Content = parameters[i].Name };
+					txt[i] = new TextBox { MinWidth = 160 };
+
+					Grid.SetColumn(labels[i], 0);
+					Grid.SetRow   (labels[i], i);
+
+					Grid.SetColumn(txt[i], 1);
+					Grid.SetRow   (txt[i], i);
+				}
+
+				if (window.ShowDialog() == true)
+				{
+
+				}	
+			}
+
+			if (algorithm is null)
+				return;
+
+			this.picture = new Picture(this.Filename).Apply(algorithm).bitmap;
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
 		}
 	}
