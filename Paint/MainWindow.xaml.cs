@@ -74,11 +74,17 @@ namespace Paint
 			if (e.LeftButton == MouseButtonState.Pressed &&
 				CurrentTool == ToolType.Pencil)
 			{
-				(int X, int Y) = GetPosition((System.Windows.Controls.Image)sender, e);
-				this.picture.SetPixel(
-					X, Y, 
-					System.Drawing.Color.FromArgb(R, G, B)
-				);
+				try
+				{
+					(int X, int Y) = GetPosition((System.Windows.Controls.Image)sender, e);
+					this.picture.SetPixel(
+						X, Y, 
+						System.Drawing.Color.FromArgb(R, G, B)
+					);
+				}
+				catch
+				{
+				}
 				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
 			}
 		}
@@ -267,7 +273,7 @@ namespace Paint
 		}
 
 		private void Niblack_Click(object sender, RoutedEventArgs e) => 
-			NiblackGeneral((std, mean) => std * 0.2 + mean);
+			NiblackGeneral((std, mean) => std * 0.5 + mean);
 
 		public delegate double Compute(double std, double mean);
 
@@ -350,13 +356,13 @@ namespace Paint
 
 		private unsafe void Bernsen_Click(object sender, RoutedEventArgs e)
 		{
-			int mainThreshold = 15;
+			int mainThreshold = 60;
 			int windowSize = 3;
 
 			BitmapData data = picture.LockBits(
-				new System.Drawing.Rectangle(System.Drawing.Point.Empty, picture.Size),
+				new Rectangle(System.Drawing.Point.Empty, picture.Size),
 				ImageLockMode.ReadWrite,
-				System.Drawing.Imaging.PixelFormat.Format24bppRgb
+				PixelFormat.Format24bppRgb
 			);
 
 			byte* p = (byte*)data.Scan0.ToPointer();
@@ -379,7 +385,7 @@ namespace Paint
 
 			byte[] write = new byte[length];
 
-			for (int i = offset; i < write.Length - offset; ++i)
+			for (int i = offset; i < write.Length - offset; i += bpp)
 			{
 				int min = p[i + offsets[0]];
 				int max = p[i + offsets[0]];
@@ -398,8 +404,10 @@ namespace Paint
 				byte mean = (byte)((max + min) / 2);
 
 				byte threshold = contrast < mainThreshold ? (byte)128 : mean;
+				byte result = p[i] > threshold ? byte.MaxValue : byte.MinValue;
 
-				write[i] = p[i] > threshold ? byte.MaxValue : byte.MinValue;
+				for (int j = 0; j < bpp; j++)
+					write[i + j] = result;
 			}
 
 			for (int i = 0; i < write.Length; ++i)
