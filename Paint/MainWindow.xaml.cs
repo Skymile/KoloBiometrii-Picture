@@ -419,14 +419,14 @@ namespace Paint
 
 		private void Save_Click(object sender, RoutedEventArgs e)
 		{
-			if (save.ShowDialog() == true)
-				picture.Save(save.FileName);
+			if (Dialogs.TrySave(out string filename))
+				picture.Save(filename);
 		}
 
 		private void Load_Click(object sender, RoutedEventArgs e)
 		{
-			if (open.ShowDialog() == true)
-				Load(open.FileName);
+			if (Dialogs.TryLoad(out string filename))
+				Load(filename);
 		}
 
 		private void Load(string filename)
@@ -446,30 +446,16 @@ namespace Paint
 		
 		private string Filename = "thinning.png";
 
-		private static readonly OpenFileDialog open = new OpenFileDialog
+		private void KMM_Click(object sender, RoutedEventArgs e) => ApplyAlgorithm<KMM>();
+		private void K3M_Click(object sender, RoutedEventArgs e) => ApplyAlgorithm<K3M>();
+		private void ZhangSuen_Click(object sender, RoutedEventArgs e) => ApplyAlgorithm<ZhangSuen>();
+
+		private void ApplyAlgorithm<T>()
+			where T : IAlgorithm
 		{
-			Title = "Wybierz obraz",
-			InitialDirectory = Directory.GetCurrentDirectory()
-		};
-
-		private static readonly SaveFileDialog save = new SaveFileDialog
-		{
-			Title = "Wybierz obraz",
-			InitialDirectory = Directory.GetCurrentDirectory()
-		};
-
-		private void KMM_Click(object sender, RoutedEventArgs e) => 
-			ApplyAlgorithm(new KMM());
-
-		private void K3M_Click(object sender, RoutedEventArgs e) => 
-			ApplyAlgorithm(new K3M());
-
-		private void ZhangSuen_Click(object sender, RoutedEventArgs e) => 
-			ApplyAlgorithm(new ZhangSuen());
-
-		private void ApplyAlgorithm(IAlgorithm algorithm)
-		{
-			this.picture = new Picture(this.Filename).Apply(algorithm).bitmap;
+			this.picture = new Picture(this.Filename).Apply(
+				Activator.CreateInstance<T>()	
+			).bitmap;
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MainSource)));
 		}
 	}
